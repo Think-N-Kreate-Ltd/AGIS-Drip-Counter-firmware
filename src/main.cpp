@@ -1,5 +1,74 @@
 #include <Arduino.h>
 #include <ezButton.h>
+#include <Wire.h>
+#include <esp_log.h>
+
+// uncomment next line to use class GFX of library GFX_Root instead of Adafruit_GFX
+//#include <GFX.h>
+
+#define SPI_EPD_CLK     14
+#define SPI_EPD_MOSI    13
+#define SPI_EPD_MISO    -1
+#define SPI_EPD_CS      21
+#define SPI_EPD_BUSY    45
+#define SPI_EPD_RST     48
+#define SPI_EPD_DC      47
+
+#include <GxEPD2_BW.h>
+#include <GxEPD2_3C.h>
+#include <Fonts/FreeSansBold9pt7b.h>
+#include <Fonts/FreeSansBold18pt7b.h>
+
+// select the display class and display driver class in the following file (new style):
+#include "GxEPD2_display_selection_new_style.h"
+
+struct fonts {
+  const GFXfont* font;
+  int width;
+  int height;
+};
+
+fonts font_xl = {&FreeSansBold18pt7b, 9, 19};
+
+struct partial_box {
+  int left, top, width, height;
+
+  void clear(bool black){
+    display.setPartialWindow(left, top, width, height);
+    display.firstPage();
+    do{
+      if(black) display.fillRect(left, top, width, height, GxEPD_BLACK);
+      else display.fillRect(left, top, width, height, GxEPD_WHITE);
+    }
+    while (display.nextPage());
+  }
+
+  void print_text(String str, fonts f) {
+    display.setPartialWindow(left, top, width, height);
+    display.setFont(f.font);
+    display.setTextColor(GxEPD_BLACK);
+
+    int16_t tbx, tby; uint16_t tbw, tbh;
+    display.getTextBounds(str, left, top, &tbx, &tby, &tbw, &tbh);
+    uint16_t x = (left + width/2 - tbw / 2 - 1);
+    display.getTextBounds(str, left, top, &tbx, &tby, &tbw, &tbh);
+    uint16_t y = top + height/2 + tbh/2 - 1;
+
+    display.firstPage();
+    do{
+      display.fillRect(left, top, width, height, GxEPD_WHITE);
+      display.setCursor(x, y);
+      display.print(str);
+    }
+    while (display.nextPage());
+  }
+};
+
+// Initializing the boxes
+partial_box dripRateGttBox = {0, 0, display.width(), 40};
+partial_box dripRateMLhBox = {0, 60, display.width(), 40};
+const char rateGttString[] = "gtt/m";
+const char rateMLhString[] = "mL/h";
 
 /*GPIO definitions*/
 #define DROP_SENSOR_PIN      18 // input pin for geting output from sensor
@@ -29,6 +98,8 @@ volatile bool turnOnLed = false;          // used to turn on the LED for a short
 void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
+void refreshDisplayTask(void *);
+void displayRateString();
 
 void setup() {
   Serial.begin(115200);
@@ -48,6 +119,16 @@ void setup() {
   timerAlarmWrite(Timer0_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
   timerAlarmEnable(Timer0_cfg);            // start the interrupt
 
+  /*Setup for Epaper display*/
+  // TODO: refactor
+  SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
+  SPI.begin(SPI_EPD_CLK, SPI_EPD_MISO, SPI_EPD_MOSI, SPI_EPD_CS); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
+  display.init(0UL, true);
+  display.setRotation(4);
+  display.setFont(font_xl.font);
+  display.setTextColor(GxEPD_BLACK);
+  displayRateString();
+
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,   /* Task function. */
               "Drop Detected LED Task", /* String with name of task. */
@@ -55,10 +136,19 @@ void setup() {
               NULL,              /* Parameter passed as input of the task */
               0,                 /* Priority of the task. */
               NULL);             /* Task handle. */
+
+  /*Create a task for refreshing Epaper display*/
+  xTaskCreate(refreshDisplayTask,   /* Task function. */
+              "Refresh Display Task", /* String with name of task. */
+              4096,              /* Stack size in bytes. */
+              NULL,              /* Parameter passed as input of the task */
+              0,                 /* Priority of the task. */
+              NULL);             /* Task handle. */
 }
 
+
 void loop() {
-  Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
+  // Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
 }
 
 /**
@@ -185,4 +275,58 @@ void dropDetectedLEDTask(void * arg) {
       vTaskDelay(50);
     }
   }
+}
+
+/**
+ * Refresh Epaper display every 1 second
+ * @param none
+ * @return none
+ */
+void refreshDisplayTask(void * arg) {
+  for(;;) {
+    static char rateGtt_buf[10];
+    sprintf(rateGtt_buf, "%d", dripRate);
+    dripRateGttBox.print_text(rateGtt_buf, font_xl);
+
+    // static char rateMLh_buf[10];
+    // // TODO: drip rate in mL/h
+    // sprintf(rateMLh_buf, "%d", dripRate);
+    // dripRateMLhBox.print_text(rateMLh_buf, font_xl);
+
+    // free the CPU
+    vTaskDelay(1000);
+  }
+}
+
+void displayRateString() {
+  display.setRotation(4);
+  display.setFont(&FreeSansBold9pt7b);
+  display.setTextColor(GxEPD_BLACK);
+  int16_t tbx, tby;
+  uint16_t tbw, tbh;
+
+  display.getTextBounds(rateGttString, 0, 0, &tbx, &tby, &tbw, &tbh);
+  // center bounding box by transposition of origin:
+  uint16_t x = ((display.width() - tbw) / 2) - tbx;
+  uint16_t y = 50;
+  display.setFullWindow();
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(x, y);
+    display.print(rateGttString);
+  } while (display.nextPage());
+
+// TODO: refresh 2 strings at the same time
+  // display.getTextBounds(rateMLhString, 0, 0, &tbx, &tby, &tbw, &tbh);
+  // // center bounding box by transposition of origin:
+  // x = ((display.width() - tbw) / 2) - tbx;
+  // y = 120;
+  // display.setFullWindow();
+  // display.firstPage();
+  // do {
+  //   // display.fillScreen(GxEPD_WHITE);
+  //   display.setCursor(x, y);
+  //   display.print(rateMLhString);
+  // } while (display.nextPage());
 }

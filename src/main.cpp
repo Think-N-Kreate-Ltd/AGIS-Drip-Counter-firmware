@@ -18,6 +18,7 @@
 #include <GxEPD2_3C.h>
 #include <Fonts/FreeSansBold9pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
+#include <Fonts/FreeMonoBold9pt7b.h>
 
 // select the display class and display driver class in the following file (new style):
 #include "GxEPD2_display_selection_new_style.h"
@@ -27,6 +28,9 @@ struct fonts {
   int width;
   int height;
 };
+
+const char GTT_STRING[] = "gtt/m";
+const char MLH_STRING[] = "mL/h";
 
 fonts font_xl = {&FreeSansBold18pt7b, 9, 19};
 
@@ -43,32 +47,59 @@ struct partial_box {
     while (display.nextPage());
   }
 
-  void print_text(String str, fonts f) {
+  void printRates(String rateGtt_str, String rateMLh_str, fonts f) {
     display.setPartialWindow(left, top, width, height);
-    display.setFont(f.font);
     display.setTextColor(GxEPD_BLACK);
 
-    int16_t tbx, tby; uint16_t tbw, tbh;
-    display.getTextBounds(str, left, top, &tbx, &tby, &tbw, &tbh);
-    uint16_t x = (left + width/2 - tbw / 2 - 1);
-    display.getTextBounds(str, left, top, &tbx, &tby, &tbw, &tbh);
-    uint16_t y = top + height/2 + tbh/2 - 1;
+    int16_t tbx, tby;
+    uint16_t tbw, tbh;
+
+    display.getTextBounds(rateGtt_str, left, top, &tbx, &tby, &tbw, &tbh);
+    uint16_t gtt_x = (left + width/2 - tbw - 1);
+    uint16_t gtt_y = top + 30;
+
+    display.getTextBounds(GTT_STRING, left, top, &tbx, &tby, &tbw, &tbh);
+    uint16_t gttString_x = ((display.width() - tbw) / 2) - tbx;
+    uint16_t gttString_y = gtt_y + 20;
+
+    display.getTextBounds(rateMLh_str, left, top, &tbx, &tby, &tbw, &tbh);
+    uint16_t mlh_x = (left + width/2 - tbw - 1);
+    uint16_t mlh_y = gttString_y + 50;
+
+    display.getTextBounds(MLH_STRING, left, top, &tbx, &tby, &tbw, &tbh);
+    uint16_t mlhString_x = ((display.width() - tbw) / 2) - tbx;
+    uint16_t mlhString_y = mlh_y + 20;
 
     display.firstPage();
     do{
       display.fillRect(left, top, width, height, GxEPD_WHITE);
-      display.setCursor(x, y);
-      display.print(str);
+
+      // display rate in gtt/m
+      display.setFont(f.font);
+      display.setCursor(gtt_x, gtt_y);
+      display.print(rateGtt_str);
+
+      // display "gtt/m" text
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(gttString_x, gttString_y);
+      display.print(GTT_STRING);
+
+      // display rate in mL/h
+      display.setFont(f.font);
+      display.setCursor(mlh_x, mlh_y);
+      display.print(rateMLh_str);
+
+      // display "mL/h" text
+      display.setFont(&FreeSansBold9pt7b);
+      display.setCursor(mlhString_x, mlhString_y);
+      display.print(MLH_STRING);
     }
     while (display.nextPage());
   }
 };
 
 // Initializing the boxes
-partial_box dripRateGttBox = {0, 0, display.width(), 40};
-partial_box dripRateMLhBox = {0, 60, display.width(), 40};
-const char rateGttString[] = "gtt/m";
-const char rateMLhString[] = "mL/h";
+partial_box dripRateBox = {0, 0, display.width(), display.height()};
 
 /*GPIO definitions*/
 #define DROP_SENSOR_PIN      18 // input pin for geting output from sensor
@@ -99,7 +130,7 @@ void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
-void displayRateString();
+void startScreen();
 
 void setup() {
   Serial.begin(115200);
@@ -127,7 +158,20 @@ void setup() {
   display.setRotation(4);
   display.setFont(font_xl.font);
   display.setTextColor(GxEPD_BLACK);
-  displayRateString();
+
+  startScreen();
+  delay(500);
+  
+  // Test:
+  // first update should be full refresh
+  // helloWorld();
+  // delay(1000);
+  // partial refresh mode can be used to full screen,
+  // effective if display panel hasFastPartialUpdate
+  // helloFullScreenPartialMode();
+  // delay(5000);
+
+  // displayRateString();
 
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,   /* Task function. */
@@ -285,48 +329,34 @@ void dropDetectedLEDTask(void * arg) {
 void refreshDisplayTask(void * arg) {
   for(;;) {
     static char rateGtt_buf[10];
+    static char rateMLh_buf[10];
     sprintf(rateGtt_buf, "%d", dripRate);
-    dripRateGttBox.print_text(rateGtt_buf, font_xl);
+    sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
 
-    // static char rateMLh_buf[10];
-    // // TODO: drip rate in mL/h
-    // sprintf(rateMLh_buf, "%d", dripRate);
-    // dripRateMLhBox.print_text(rateMLh_buf, font_xl);
+    dripRateBox.printRates(rateGtt_buf, rateMLh_buf, font_xl);
 
     // free the CPU
     vTaskDelay(1000);
   }
 }
 
-void displayRateString() {
+void startScreen() {
+  const char START_STRING[] = "Drip \nCounter";
+
   display.setRotation(4);
-  display.setFont(&FreeSansBold9pt7b);
+  display.setFont(&FreeMonoBold9pt7b);
   display.setTextColor(GxEPD_BLACK);
   int16_t tbx, tby;
   uint16_t tbw, tbh;
-
-  display.getTextBounds(rateGttString, 0, 0, &tbx, &tby, &tbw, &tbh);
+  display.getTextBounds(START_STRING, 0, 0, &tbx, &tby, &tbw, &tbh);
   // center bounding box by transposition of origin:
   uint16_t x = ((display.width() - tbw) / 2) - tbx;
-  uint16_t y = 50;
+  uint16_t y = ((display.height() - tbh) / 2) - tby;
   display.setFullWindow();
   display.firstPage();
   do {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(x, y);
-    display.print(rateGttString);
+    display.print(START_STRING);
   } while (display.nextPage());
-
-// TODO: refresh 2 strings at the same time
-  // display.getTextBounds(rateMLhString, 0, 0, &tbx, &tby, &tbw, &tbh);
-  // // center bounding box by transposition of origin:
-  // x = ((display.width() - tbw) / 2) - tbx;
-  // y = 120;
-  // display.setFullWindow();
-  // display.firstPage();
-  // do {
-  //   // display.fillScreen(GxEPD_WHITE);
-  //   display.setCursor(x, y);
-  //   display.print(rateMLhString);
-  // } while (display.nextPage());
 }

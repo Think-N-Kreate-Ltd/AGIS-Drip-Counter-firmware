@@ -14,6 +14,9 @@
 // Good Display ePaper for Arduino: https://forum.arduino.cc/index.php?topic=436411.0
 
 // select the display class (only one), matching the kind of display panel
+
+#ifndef E025A13C_3835_413C_9B5B_5FE378E92140
+#define E025A13C_3835_413C_9B5B_5FE378E92140
 #define GxEPD2_DISPLAY_CLASS GxEPD2_BW
 //#define GxEPD2_DISPLAY_CLASS GxEPD2_3C
 //#define GxEPD2_DISPLAY_CLASS GxEPD2_7C
@@ -234,3 +237,6 @@ GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> displ
 #endif
 
 #endif
+
+
+#endif /* E025A13C_3835_413C_9B5B_5FE378E92140 */

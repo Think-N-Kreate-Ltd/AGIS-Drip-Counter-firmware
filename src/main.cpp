@@ -2,111 +2,8 @@
 #include <ezButton.h>
 #include <Wire.h>
 #include <esp_log.h>
-
-// uncomment next line to use class GFX of library GFX_Root instead of Adafruit_GFX
-//#include <GFX.h>
-
-#define SPI_EPD_CLK     14
-#define SPI_EPD_MOSI    13
-#define SPI_EPD_MISO    -1
-#define SPI_EPD_CS      21
-#define SPI_EPD_BUSY    45
-#define SPI_EPD_RST     48
-#define SPI_EPD_DC      47
-
-#include <GxEPD2_BW.h>
-#include <GxEPD2_3C.h>
-#include <Fonts/FreeSansBold9pt7b.h>
-#include <Fonts/FreeSansBold18pt7b.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
-
-// select the display class and display driver class in the following file (new style):
-#include "GxEPD2_display_selection_new_style.h"
-
-struct fonts {
-  const GFXfont* font;
-  int width;
-  int height;
-};
-
-const char GTT_STRING[] = "gtt/m";
-const char MLH_STRING[] = "mL/h";
-
-fonts font_xl = {&FreeSansBold18pt7b, 9, 19};
-
-struct partial_box {
-  int left, top, width, height;
-
-  void clear(bool black){
-    display.setPartialWindow(left, top, width, height);
-    display.firstPage();
-    do{
-      if(black) display.fillRect(left, top, width, height, GxEPD_BLACK);
-      else display.fillRect(left, top, width, height, GxEPD_WHITE);
-    }
-    while (display.nextPage());
-  }
-
-  void printRates(String rateGtt_str, String rateMLh_str, fonts f) {
-    display.setPartialWindow(left, top, width, height);
-    display.setTextColor(GxEPD_BLACK);
-
-    int16_t tbx, tby;
-    uint16_t tbw, tbh;
-
-    display.getTextBounds(rateGtt_str, left, top, &tbx, &tby, &tbw, &tbh);
-    uint16_t gtt_x = (left + width/2 - tbw - 1);
-    uint16_t gtt_y = top + 30;
-
-    display.getTextBounds(GTT_STRING, left, top, &tbx, &tby, &tbw, &tbh);
-    uint16_t gttString_x = ((display.width() - tbw) / 2) - tbx;
-    uint16_t gttString_y = gtt_y + 20;
-
-    display.getTextBounds(rateMLh_str, left, top, &tbx, &tby, &tbw, &tbh);
-    uint16_t mlh_x = (left + width/2 - tbw - 1);
-    uint16_t mlh_y = gttString_y + 50;
-
-    display.getTextBounds(MLH_STRING, left, top, &tbx, &tby, &tbw, &tbh);
-    uint16_t mlhString_x = ((display.width() - tbw) / 2) - tbx;
-    uint16_t mlhString_y = mlh_y + 20;
-
-    display.firstPage();
-    do{
-      display.fillRect(left, top, width, height, GxEPD_WHITE);
-
-      // display rate in gtt/m
-      display.setFont(f.font);
-      display.setCursor(gtt_x, gtt_y);
-      display.print(rateGtt_str);
-
-      // display "gtt/m" text
-      display.setFont(&FreeSansBold9pt7b);
-      display.setCursor(gttString_x, gttString_y);
-      display.print(GTT_STRING);
-
-      // display rate in mL/h
-      display.setFont(f.font);
-      display.setCursor(mlh_x, mlh_y);
-      display.print(rateMLh_str);
-
-      // display "mL/h" text
-      display.setFont(&FreeSansBold9pt7b);
-      display.setCursor(mlhString_x, mlhString_y);
-      display.print(MLH_STRING);
-    }
-    while (display.nextPage());
-  }
-};
-
-// Initializing the boxes
-partial_box dripRateBox = {0, 0, display.width(), display.height()};
-
-/*GPIO definitions*/
-#define DROP_SENSOR_PIN      18 // input pin for geting output from sensor
-#define DROP_SENSOR_LED_PIN  8  // output pin to sensor for turning on LED
-
-/*Constant definitions*/
-#define DROP_DEBOUNCE_TIME   10 // if two pulses are generated within debounce time, it must be detected as 1 drop
+#include <DC_Display.h>
+#include <DC_Commons.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -130,7 +27,6 @@ void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
-void startScreen();
 
 void setup() {
   Serial.begin(115200);
@@ -150,28 +46,10 @@ void setup() {
   timerAlarmWrite(Timer0_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
   timerAlarmEnable(Timer0_cfg);            // start the interrupt
 
-  /*Setup for Epaper display*/
-  // TODO: refactor
-  SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
-  SPI.begin(SPI_EPD_CLK, SPI_EPD_MISO, SPI_EPD_MOSI, SPI_EPD_CS); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
-  display.init(0UL, true);
-  display.setRotation(4);
-  display.setFont(font_xl.font);
-  display.setTextColor(GxEPD_BLACK);
-
+  /*Initialize Epaper display and show welcome screen*/
+  displayInit();
   startScreen();
   delay(500);
-  
-  // Test:
-  // first update should be full refresh
-  // helloWorld();
-  // delay(1000);
-  // partial refresh mode can be used to full screen,
-  // effective if display panel hasFastPartialUpdate
-  // helloFullScreenPartialMode();
-  // delay(5000);
-
-  // displayRateString();
 
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,   /* Task function. */
@@ -333,30 +211,9 @@ void refreshDisplayTask(void * arg) {
     sprintf(rateGtt_buf, "%d", dripRate);
     sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
 
-    dripRateBox.printRates(rateGtt_buf, rateMLh_buf, font_xl);
+    printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
 
     // free the CPU
-    vTaskDelay(1000);
+    vTaskDelay(DISPLAY_REFRESH_TIME);
   }
-}
-
-void startScreen() {
-  const char START_STRING[] = "Drip \nCounter";
-
-  display.setRotation(4);
-  display.setFont(&FreeMonoBold9pt7b);
-  display.setTextColor(GxEPD_BLACK);
-  int16_t tbx, tby;
-  uint16_t tbw, tbh;
-  display.getTextBounds(START_STRING, 0, 0, &tbx, &tby, &tbw, &tbh);
-  // center bounding box by transposition of origin:
-  uint16_t x = ((display.width() - tbw) / 2) - tbx;
-  uint16_t y = ((display.height() - tbh) / 2) - tby;
-  display.setFullWindow();
-  display.firstPage();
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(x, y);
-    display.print(START_STRING);
-  } while (display.nextPage());
 }

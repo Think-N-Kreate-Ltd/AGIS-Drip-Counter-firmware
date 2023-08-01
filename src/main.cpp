@@ -1,12 +1,10 @@
 #include <Arduino.h>
 #include <ezButton.h>
-
-/*GPIO definitions*/
-#define DROP_SENSOR_PIN      18 // input pin for geting output from sensor
-#define DROP_SENSOR_LED_PIN  8  // output pin to sensor for turning on LED
-
-/*Constant definitions*/
-#define DROP_DEBOUNCE_TIME   10 // if two pulses are generated within debounce time, it must be detected as 1 drop
+#include <Wire.h>
+#include <esp_log.h>
+#include <DC_Display.h>
+#include <DC_Commons.h>
+#include <DC_Utilities.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -29,6 +27,8 @@ volatile bool turnOnLed = false;          // used to turn on the LED for a short
 void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
+void refreshDisplayTask(void *);
+void monitorBatteryTask(void *);
 
 void setup() {
   Serial.begin(115200);
@@ -37,6 +37,11 @@ void setup() {
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+
+  // pinMode(ADC_ENABLE_PIN, OUTPUT);
+  // pinMode(ADC_PIN, INPUT);
+  // analogReadResolution(12);  // 12bit ADC
+  // digitalWrite(ADC_ENABLE_PIN, HIGH);     // initially, disable to save power
 
   /*Setup for sensor interrupt*/
   attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
@@ -48,6 +53,11 @@ void setup() {
   timerAlarmWrite(Timer0_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
   timerAlarmEnable(Timer0_cfg);            // start the interrupt
 
+  /*Initialize Epaper display and show welcome screen*/
+  displayInit();
+  startScreen();
+  delay(500);
+
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,   /* Task function. */
               "Drop Detected LED Task", /* String with name of task. */
@@ -55,10 +65,27 @@ void setup() {
               NULL,              /* Parameter passed as input of the task */
               0,                 /* Priority of the task. */
               NULL);             /* Task handle. */
+
+  /*Create a task for refreshing Epaper display*/
+  xTaskCreate(refreshDisplayTask,   /* Task function. */
+              "Refresh Display Task", /* String with name of task. */
+              4096,              /* Stack size in bytes. */
+              NULL,              /* Parameter passed as input of the task */
+              1,                 /* Priority of the task. */
+              NULL);             /* Task handle. */
+
+  /*Create a task for monitoring battery level*/
+  // xTaskCreate(monitorBatteryTask,   /* Task function. */
+  //             "Monitor Battery Task", /* String with name of task. */
+  //             4096,              /* Stack size in bytes. */
+  //             NULL,              /* Parameter passed as input of the task */
+  //             0,                 /* Priority of the task. */
+  //             NULL);             /* Task handle. */
 }
 
+
 void loop() {
-  Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
+  // Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
 }
 
 /**
@@ -184,5 +211,41 @@ void dropDetectedLEDTask(void * arg) {
       // free the CPU
       vTaskDelay(50);
     }
+  }
+}
+
+/**
+ * Refresh Epaper display every 1 second
+ * @param none
+ * @return none
+ */
+void refreshDisplayTask(void * arg) {
+  for(;;) {
+    static char rateGtt_buf[10];
+    static char rateMLh_buf[10];
+    sprintf(rateGtt_buf, "%d", dripRate);
+    sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
+
+    printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
+
+    // free the CPU
+    vTaskDelay(DISPLAY_REFRESH_TIME);
+  }
+}
+
+/**
+ * Monitor battery level based on its remaining voltage
+ * and alarm if the battery level is low
+ * @param none
+ * @return none
+ */
+void monitorBatteryTask(void * arg) {
+  for(;;) {
+    float batteryVoltage = getBatteryVoltage();
+    // Serial.printf("Battery voltage: %f\n", batteryVoltage);
+    Serial.printf("ADC value: %f\n", batteryVoltage);
+
+    // free the CPU
+    vTaskDelay(BATTERY_MONITOR_TIME);
   }
 }

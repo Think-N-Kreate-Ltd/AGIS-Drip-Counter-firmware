@@ -17,7 +17,7 @@ void displayInit() {
   SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
   SPI.begin(SPI_EPD_CLK, SPI_EPD_MISO, SPI_EPD_MOSI, SPI_EPD_CS); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
   display.init(0UL, true);
-  display.setRotation(4);
+  display.setRotation(2);
   display.setFont(font_xl.font);
   display.setTextColor(GxEPD_BLACK);
 }
@@ -83,7 +83,7 @@ void printRates(struct partial_box box, String rateGtt_str, String rateMLh_str, 
  * @return none
  */
 void startScreen() {
-  display.setRotation(4);
+  display.setRotation(2);
   display.setFont(&FreeMonoBold9pt7b);
   display.setTextColor(GxEPD_BLACK);
   int16_t tbx, tby;

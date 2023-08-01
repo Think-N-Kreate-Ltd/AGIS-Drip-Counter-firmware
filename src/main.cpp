@@ -4,6 +4,7 @@
 #include <esp_log.h>
 #include <DC_Display.h>
 #include <DC_Commons.h>
+#include <DC_Utilities.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -27,6 +28,7 @@ void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
+void monitorBatteryTask(void *);
 
 void setup() {
   Serial.begin(115200);
@@ -35,6 +37,11 @@ void setup() {
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+
+  // pinMode(ADC_ENABLE_PIN, OUTPUT);
+  // pinMode(ADC_PIN, INPUT);
+  // analogReadResolution(12);  // 12bit ADC
+  // digitalWrite(ADC_ENABLE_PIN, HIGH);     // initially, disable to save power
 
   /*Setup for sensor interrupt*/
   attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
@@ -64,8 +71,16 @@ void setup() {
               "Refresh Display Task", /* String with name of task. */
               4096,              /* Stack size in bytes. */
               NULL,              /* Parameter passed as input of the task */
-              0,                 /* Priority of the task. */
+              1,                 /* Priority of the task. */
               NULL);             /* Task handle. */
+
+  /*Create a task for monitoring battery level*/
+  // xTaskCreate(monitorBatteryTask,   /* Task function. */
+  //             "Monitor Battery Task", /* String with name of task. */
+  //             4096,              /* Stack size in bytes. */
+  //             NULL,              /* Parameter passed as input of the task */
+  //             0,                 /* Priority of the task. */
+  //             NULL);             /* Task handle. */
 }
 
 
@@ -215,5 +230,22 @@ void refreshDisplayTask(void * arg) {
 
     // free the CPU
     vTaskDelay(DISPLAY_REFRESH_TIME);
+  }
+}
+
+/**
+ * Monitor battery level based on its remaining voltage
+ * and alarm if the battery level is low
+ * @param none
+ * @return none
+ */
+void monitorBatteryTask(void * arg) {
+  for(;;) {
+    float batteryVoltage = getBatteryVoltage();
+    // Serial.printf("Battery voltage: %f\n", batteryVoltage);
+    Serial.printf("ADC value: %f\n", batteryVoltage);
+
+    // free the CPU
+    vTaskDelay(BATTERY_MONITOR_TIME);
   }
 }

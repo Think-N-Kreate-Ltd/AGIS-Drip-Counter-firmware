@@ -5,6 +5,7 @@
 #include <DC_Display.h>
 #include <DC_Commons.h>
 #include <DC_Utilities.h>
+#include <DC_I2C.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -37,6 +38,9 @@ void setup() {
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+
+  /*I2C initialization for sending out data, e.g. to AGIS*/
+  DC_i2cInit();
 
   // pinMode(ADC_ENABLE_PIN, OUTPUT);
   // pinMode(ADC_PIN, INPUT);

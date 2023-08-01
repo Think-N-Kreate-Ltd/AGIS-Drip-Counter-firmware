@@ -19,6 +19,12 @@
 #define ADC_ENABLE_PIN      46
 #define ADC_PIN             3
 
+// I2C pin for data output
+#define DC_I2C_ADDR         0x23
+#define DC_I2C_SDA_PIN      35
+#define DC_I2C_SCL_PIN      36
+#define DC_I2C_FREQ         1000000 // 100khz
+
 /*Constant definitions*/
 #define DROP_DEBOUNCE_TIME   10    // if two pulses are generated within debounce time, it must be detected as 1 drop
 #define DISPLAY_REFRESH_TIME 1000  // time between display refresh
@@ -27,5 +33,8 @@
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";
 const char START_SCREEN_STRING[] = "Drip \nCounter";
+
+/*Externally declared variables*/
+extern volatile unsigned int dripRate;
 
 #endif /* E993476A_2792_4D1A_AC33_62E9F17CC12A */

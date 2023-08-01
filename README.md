@@ -10,3 +10,7 @@ Firmware for Drip Counter
 - Display SPI_EPD_BUSY  : GPIO45
 - Display SPI_EPD_RST   : GPIO48
 - Display SPI_EPD_DC    : GPIO47
+- I2C data output SDA   : GPIO35
+- I2C data output SCL   : GPIO36
+
+## Device I2C address: 0x23

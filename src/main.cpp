@@ -5,6 +5,7 @@
 #include <DC_Display.h>
 #include <DC_Commons.h>
 #include <DC_Utilities.h>
+#include <DC_Logging.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -22,6 +23,7 @@ hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
 
 /*Other variables*/
 volatile bool turnOnLed = false;          // used to turn on the LED for a short time
+volatile bool powerButtonPressed = false;
 
 /*Function prototypes*/
 void IRAM_ATTR dropSensorISR();
@@ -29,9 +31,14 @@ void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
 void monitorBatteryTask(void *);
+void IRAM_ATTR powerOffISR();
 
 void setup() {
   Serial.begin(115200);
+
+  /*Set latch IO pin as input when the chip is powered on*/
+  pinMode(LATCH_IO_PIN, INPUT);
+  attachInterrupt(LATCH_IO_PIN, &powerOffISR, FALLING);
 
   /*GPIO setup*/
   pinMode(DROP_SENSOR_PIN, INPUT);
@@ -221,12 +228,20 @@ void dropDetectedLEDTask(void * arg) {
  */
 void refreshDisplayTask(void * arg) {
   for(;;) {
-    static char rateGtt_buf[10];
-    static char rateMLh_buf[10];
-    sprintf(rateGtt_buf, "%d", dripRate);
-    sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
+    if (powerButtonPressed) {
 
-    printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
+      ESP_LOGI(POWER_LOG_TAG, "Power off screen started");
+      powerOffScreen();
+      powerButtonPressed = false;
+    }
+    else {
+      static char rateGtt_buf[10];
+      static char rateMLh_buf[10];
+      sprintf(rateGtt_buf, "%d", dripRate);
+      sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
+
+      printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
+    }
 
     // free the CPU
     vTaskDelay(DISPLAY_REFRESH_TIME);
@@ -248,4 +263,22 @@ void monitorBatteryTask(void * arg) {
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);
   }
+}
+
+/**
+ * Properly shut down the application when power button is pressed and hold
+ * @param none
+ * @return none
+ */
+void IRAM_ATTR powerOffISR() {
+  // static int powerButtonHoldCount = 0;
+  // powerButtonHoldCount++;
+
+  powerButtonPressed = true;
+
+  // ESP_LOGI(POWER_LOG_TAG, "Power hold count: %d", powerButtonHoldCount);
+
+  /*Power off device by driving latch pin LOW*/
+  // pinMode(LATCH_IO_PIN, OUTPUT);
+  // digitalWrite(LATCH_IO_PIN, LOW);
 }

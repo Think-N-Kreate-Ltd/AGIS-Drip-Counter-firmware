@@ -5,6 +5,7 @@
 #include <DC_Display.h>
 #include <DC_Commons.h>
 #include <DC_Utilities.h>
+#include <DC_Logging.h>
 #include <DC_I2C.h>
 
 /*Variables for monitoring dripping parameters*/
@@ -20,19 +21,31 @@ volatile unsigned int infusedVolume_x100 = 0;  // 100 times larger than actual v
 
 /*Timer pointers*/
 hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
+hw_timer_t *Timer1_cfg = NULL; // create a pointer for timer1
 
 /*Other variables*/
 volatile bool turnOnLed = false;          // used to turn on the LED for a short time
+volatile bool powerButtonPressed = false;
+volatile bool powerButtonHold = false;
+volatile bool displayPowerOffScreen = false;
+volatile unsigned long powerButtonHoldCount = 0;
+ezButton powerButton(LATCH_IO_PIN);
 
 /*Function prototypes*/
 void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
+void powerOffDisplayTask(void *);
 void monitorBatteryTask(void *);
+void IRAM_ATTR powerOffISR();
 
 void setup() {
   Serial.begin(115200);
+
+  /*Power button setup*/
+  // powerButton.setDebounceTime(50);  //TODO: verify again with membrane keypad
+  // powerButton.setCountMode(COUNT_FALLING);
 
   /*GPIO setup*/
   pinMode(DROP_SENSOR_PIN, INPUT);
@@ -51,11 +64,18 @@ void setup() {
   attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
 
   /*Setup for timer0*/
-  Timer0_cfg = timerBegin(0, 80, true); // prescaler = 80
+  Timer0_cfg = timerBegin(0, 80, true);
   timerAttachInterrupt(Timer0_cfg, &dripCountUpdateISR,
-                       false);              // call the function motorcontrol()
+                       false);
   timerAlarmWrite(Timer0_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
-  timerAlarmEnable(Timer0_cfg);            // start the interrupt
+  timerAlarmEnable(Timer0_cfg);
+
+  /*Setup for timer1*/
+  Timer1_cfg = timerBegin(1, 80, true);
+  timerAttachInterrupt(Timer1_cfg, &powerOffISR,
+                       false);
+  timerAlarmWrite(Timer1_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
+  timerAlarmEnable(Timer1_cfg);
 
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
@@ -63,33 +83,43 @@ void setup() {
   delay(500);
 
   /*Create a task for toggling LED everytime a drop is detected*/
-  xTaskCreate(dropDetectedLEDTask,   /* Task function. */
-              "Drop Detected LED Task", /* String with name of task. */
-              4096,              /* Stack size in bytes. */
-              NULL,              /* Parameter passed as input of the task */
-              0,                 /* Priority of the task. */
-              NULL);             /* Task handle. */
+  xTaskCreate(dropDetectedLEDTask,
+              "Drop Detected LED Task",
+              4096,
+              NULL,
+              0,
+              NULL);
 
   /*Create a task for refreshing Epaper display*/
-  xTaskCreate(refreshDisplayTask,   /* Task function. */
-              "Refresh Display Task", /* String with name of task. */
-              4096,              /* Stack size in bytes. */
-              NULL,              /* Parameter passed as input of the task */
-              1,                 /* Priority of the task. */
-              NULL);             /* Task handle. */
+  xTaskCreate(refreshDisplayTask,
+              "Refresh Display Task",
+              4096,
+              NULL,
+              1,
+              NULL);
+
+  /*Create a task for displaying shutdown screen*/
+  xTaskCreate(powerOffDisplayTask,
+              "Power Off Display Task",
+              4096,
+              NULL,
+              2,      // higher priority than other display tasks
+              NULL);
 
   /*Create a task for monitoring battery level*/
-  // xTaskCreate(monitorBatteryTask,   /* Task function. */
-  //             "Monitor Battery Task", /* String with name of task. */
-  //             4096,              /* Stack size in bytes. */
-  //             NULL,              /* Parameter passed as input of the task */
-  //             0,                 /* Priority of the task. */
-  //             NULL);             /* Task handle. */
+  // xTaskCreate(monitorBatteryTask,
+  //             "Monitor Battery Task",
+  //             4096,
+  //             NULL,
+  //             0,
+  //             NULL);
 }
 
 
 void loop() {
   // Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
+  Serial.printf("%d\n", powerButtonHoldCount);
+  delay(500);
 }
 
 /**
@@ -225,15 +255,37 @@ void dropDetectedLEDTask(void * arg) {
  */
 void refreshDisplayTask(void * arg) {
   for(;;) {
-    static char rateGtt_buf[10];
-    static char rateMLh_buf[10];
-    sprintf(rateGtt_buf, "%d", dripRate);
-    sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
+    if(!powerButtonHold) {
+      static char rateGtt_buf[10];
+      static char rateMLh_buf[10];
+      sprintf(rateGtt_buf, "%d", dripRate);
+      sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
 
-    printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
+      printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
+    }
 
     // free the CPU
     vTaskDelay(DISPLAY_REFRESH_TIME);
+  }
+}
+
+/**
+ * Task to display the power off screen to notify user
+ * @param none
+ * @return none
+ */
+void powerOffDisplayTask(void * arg) {
+  for(;;) {
+    if(powerButtonHold) {
+      ESP_LOGD(POWER_LOG_TAG, "Power off screen started");
+      powerOffScreen();
+      // vTaskDelay(2000);
+      powerButtonHold = false;
+      displayPowerOffScreen = true;  // to notify powerOffISR()
+    }
+
+    // free the CPU
+    vTaskDelay(100);
   }
 }
 
@@ -251,5 +303,38 @@ void monitorBatteryTask(void * arg) {
 
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);
+  }
+}
+
+/**
+ * Properly shut down the application when power button is pressed and hold
+ * @param none
+ * @return none
+ */
+void IRAM_ATTR powerOffISR() {
+
+  powerButton.loop();
+  if(!powerButton.getState()) {
+    powerButtonHoldCount++;
+  }
+
+  if(powerButtonHoldCount >= 500 && !displayPowerOffScreen) {
+    /*raise the flag to display power off screen but not shut down yet*/
+    powerButtonHold = true;
+  }
+  
+  if(powerButtonHoldCount >= 2000){
+    /*clean up program before shutdown*/
+    //TODO: what needs to be cleaned up?
+
+    // ESP_LOGI(POWER_LOG_TAG, "Shut down now");
+
+    /*shut down now*/
+    pinMode(LATCH_IO_PIN, OUTPUT);
+    digitalWrite(LATCH_IO_PIN, LOW);
+  }
+
+  if(powerButton.isReleased()) {
+    powerButtonHoldCount = 0;
   }
 }

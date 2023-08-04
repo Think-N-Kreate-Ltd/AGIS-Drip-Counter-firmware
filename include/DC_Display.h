@@ -39,5 +39,6 @@ extern partial_box dripRateBox;
 void displayInit();
 void startScreen();
 void printRates(struct partial_box box, String rateGtt_str, String rateMLh_str, fonts f);
+void powerOffScreen();
 
 #endif /* B6F3EDF6_26E6_475A_8BCD_2F6D61486F3D */

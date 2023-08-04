@@ -16,8 +16,11 @@
 #define SPI_EPD_DC           47
 
 // Battery monitoring - ADC
-#define ADC_ENABLE_PIN      46
-#define ADC_PIN             3
+#define ADC_ENABLE_PIN       46
+#define ADC_PIN              3
+
+// Latch pin for power on/off
+#define LATCH_IO_PIN         9
 
 // I2C pin for data output
 #define DC_I2C_ADDR         0x23
@@ -33,6 +36,7 @@
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";
 const char START_SCREEN_STRING[] = "Drip \nCounter";
+const char POWER_OFF_SCREEN_STRING[] = "Shut \ndown...";
 
 /*Externally declared variables*/
 extern volatile unsigned int dripRate;

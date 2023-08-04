@@ -43,10 +43,6 @@ void IRAM_ATTR powerOffISR();
 void setup() {
   Serial.begin(115200);
 
-  /*Power button setup*/
-  // powerButton.setDebounceTime(50);  //TODO: verify again with membrane keypad
-  // powerButton.setCountMode(COUNT_FALLING);
-
   /*GPIO setup*/
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
@@ -118,8 +114,6 @@ void setup() {
 
 void loop() {
   // Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
-  Serial.printf("%d\n", powerButtonHoldCount);
-  delay(500);
 }
 
 /**

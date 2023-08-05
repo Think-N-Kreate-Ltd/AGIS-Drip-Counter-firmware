@@ -2,5 +2,6 @@
 #define E2299B70_F2D4_4415_8439_5D25FA9AAAD7
 
 static const char* POWER_LOG_TAG = "POWER_LOG";
+static const char* I2C_LOG_TAG = "I2C_LOG";
 
 #endif /* E2299B70_F2D4_4415_8439_5D25FA9AAAD7 */

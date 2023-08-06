@@ -23,7 +23,6 @@
 #define LATCH_IO_PIN         9
 
 // I2C pin for data output
-#define DC_I2C_ADDR         0x23
 #define DC_I2C_SDA_PIN      35
 #define DC_I2C_SCL_PIN      36
 #define DC_I2C_FREQ         1000000 // 100khz

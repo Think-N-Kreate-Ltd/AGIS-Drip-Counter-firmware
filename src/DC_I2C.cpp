@@ -1,22 +1,51 @@
+// Ref:
+// https://inductive-kickback.com/2019/04/creating-an-i2c-slave-interface-for-a-sensor-or-peripheral/
 #include <DC_I2C.h>
 #include <Wire.h>
 #include <DC_Commons.h>
 #include <Arduino.h>
 #include <esp_log.h>
 #include <DC_Logging.h>
-#include <Drip_Counter_API_config.h>
 
-static drip_counter_data_t drip_counter_data; 
-char buf[32];
-static uint8_t i2cRecvMode;  // 0: Command; 1: Data
+static const char* TAG = "I2C_LOG";
 
-void DC_i2cInit() {
+MyI2CPeripheral I2CDevice;
+
+/* Two sets of buffers...
+ *  receivedBytes[] will store incoming bytes as they are accumulated
+ *  
+ *  pendingCommand[] will hold commands as they come in from the master
+ *  and be processed in a task
+ *  
+ * We're using a little double buffering type deal here to keep  
+ * the interrupt routine simple and "safely" process the writes
+ * 
+ * This is still subject to a race condition if the master is 
+ * writing bytes too fast, but we're operating under the assumption
+ * that each write will be followed for a request for a response 
+ * and enough of a delay to allow processing to take place.
+ */
+volatile uint8_t receivedBytes[RCV_COMMAND_MAX_BYTES];
+volatile uint8_t receivedByteIdx = 0;
+
+
+// pendingCommand buffer and len
+// volatile because it's the way we're talking between
+// our interrupt and our main 'thread'--either side may
+// change the values at will
+volatile uint8_t pendingCommand[RCV_COMMAND_MAX_BYTES];
+volatile uint8_t pendingCommandLength = 0;
+
+static dripCounterDataPackage_t dripCounterDataPackage; 
+
+/// @brief Join Drip Counter as an I2C peripheral
+void MyI2CPeripheral::i2cInit() {
   Wire.onReceive(onReceive);
   Wire.onRequest(onRequest);
   Wire.begin((uint8_t)DC_I2C_ADDR, DC_I2C_SDA_PIN, DC_I2C_SCL_PIN, DC_I2C_FREQ);
-
-  // Set the default receive mode
-  i2cRecvMode = 0;
+  
+  /*Inititialze default settings*/
+  // pendingCommandLength = 0;
 
   //TODO: add log info
 
@@ -24,28 +53,129 @@ void DC_i2cInit() {
 
 }
 
-void onRequest(){
-  if (i2cRecvMode == 1) { // transmission test
-    Wire.write((byte *)&buf, sizeof(buf));
-    i2cRecvMode = 0;
-  } else if (i2cRecvMode == 0){ // data
-    /*Package data to struct before sending out*/
-    drip_counter_data.dripRate = dripRate;
-    drip_counter_data.numDrops = numDrops;
-    // add more...
+/// @brief Check if there is command to be processed
+/// @return True if there is command, False otherwise
+// bool MyI2CPeripheral::commandPending() {
+//   if (pendingCommandLength)
+//     return true;
+//   else
+//     return false;
+// }
 
-    Wire.write((byte *)&drip_counter_data, sizeof(drip_counter_data_t));
-  }
+void MyI2CPeripheral::process(volatile uint8_t *buffer, uint8_t len) {
+  // keep track of last command for any read requests later
+  currentRegister = buffer[0];
 
-  ESP_LOGD(I2C_LOG_TAG, "Data sent");
+  // doing things here...
+
+  statusValue++;  // just increment to see the value is changed in each transaction
+  someValue++;
 }
 
-void onReceive(int len){
-  // char buf[len+1];
-  buf[len] = '\0';   // received buffer is not NULL terminated 
+/// @brief Returns an appropriate buffer (or more exactly, pointer to the
+/// buffer), and its length, according to received command previously, or default.
+/// The idea is that the response will be sent over to the master.
+SlaveResponse MyI2CPeripheral::getResponse() {
+  SlaveResponse resp;
 
-  Wire.readBytes(buf, len);
-  ESP_LOGD(I2C_LOG_TAG, "Received: %s", buf);
+  switch (currentRegister) {
+  case CMD_GET_STATUS:
+    resp.buffer = &statusValue;
+    resp.size = commandsLookupTable[CMD_GET_STATUS][2];
+    break;
 
-  i2cRecvMode = 1; // TODO: refactor
+  case CMD_SET_TIME:
+    resp.buffer = &statusValue;
+    resp.size = commandsLookupTable[CMD_SET_TIME][2];
+    break;
+
+  case CMD_GET_TIME:
+    resp.buffer = (uint8_t *)&someValue;
+    resp.size = commandsLookupTable[CMD_GET_TIME][2];
+    break;
+
+  case CMD_GET_DATA:
+    /*Package data before sending out*/
+    dripCounterDataPackage.data.dripRate = dripRate;
+    dripCounterDataPackage.data.numDrops = numDrops;
+
+    resp.buffer = dripCounterDataPackage.bytes;
+    resp.size = commandsLookupTable[CMD_GET_DATA][2];
+    break;
+
+  default:
+    resp.buffer = (uint8_t *)"booya";
+    resp.size = 5;
+    break;
+  }
+
+  return resp;
+}
+
+/// @brief This will be called when the master is aksing to get some data from
+/// the device
+void onRequest(){
+  /*Get the response*/
+  SlaveResponse resp = I2CDevice.getResponse();
+
+  /*Send the response to the master*/
+  Wire.write(resp.buffer, resp.size);
+  ESP_LOGD(TAG, "Sent [%d] bytes", resp.size);
+}
+
+/// @brief This will be called when the device receives bytes of data from the
+/// master. Note that we may not get all the bytes we need in a single call, and
+/// the number of bytes we expect depends on what is actually being transmitted
+/// @param bytesReceived: number of bytes received in this call
+void onReceive(int bytesReceived){
+
+  uint8_t msgLen = 0;
+
+  /*Read incoming bytes*/
+  for (uint8_t i = 0; i < bytesReceived; i++) {
+    receivedBytes[receivedByteIdx] = Wire.read(); // read 1 byte
+    ESP_LOGD(TAG, "Received command: %#x", receivedBytes[0]);
+
+    // The 1st byte of the message corresponds to the expected message length
+    // See the Commands Lookup Table
+    if (!msgLen) {
+      msgLen = I2CDevice.expectedReceiveLength(receivedBytes[0]);
+    }
+
+    receivedByteIdx++;
+
+    /*When we receive the full message*/
+    if (receivedByteIdx >= msgLen) {
+      ESP_LOGD(TAG, "Received [%d] bytes", msgLen);
+
+      /*copy the bytes into command buffer*/
+      for (uint8_t i = 0; i < msgLen; i++) {
+        pendingCommand[i] =
+            receivedBytes[i]; // copy manually, there could be a better way?
+      }
+
+      // raise the flag to signal that we've got a new command ready to be
+      // processed
+      pendingCommandLength = msgLen;
+
+      // reset for the next command/message
+      receivedByteIdx = 0;
+      msgLen = 0;
+    }
+  }
+}
+
+/// @brief Returns the number of bytes to receive for a given command
+/// @param commandID: command ID, see the Commands Lookup Table (CLT)
+/// @return Number of bytes
+uint8_t MyI2CPeripheral::expectedReceiveLength(uint8_t commandID) {
+  /*Check if command ID exists in the table*/
+  int rows = sizeof(commandsLookupTable) / sizeof(commandsLookupTable[0]);
+  if (commandID < rows) {
+    return commandsLookupTable[commandID][1];
+  } else {
+    // Unknown command
+    ESP_LOGD(TAG, "Unknown command: %#X", commandID);
+    return 0;
+  }
 }

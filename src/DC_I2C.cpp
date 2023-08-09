@@ -25,7 +25,7 @@ MyI2CPeripheral I2CDevice;
  * that each write will be followed for a request for a response 
  * and enough of a delay to allow processing to take place.
  */
-volatile uint8_t receivedBytes[RCV_COMMAND_MAX_BYTES];
+volatile uint8_t receivedBytes[RECV_COMMAND_MAX_BYTES];
 volatile uint8_t receivedByteIdx = 0;
 
 
@@ -33,7 +33,7 @@ volatile uint8_t receivedByteIdx = 0;
 // volatile because it's the way we're talking between
 // our interrupt and our main 'thread'--either side may
 // change the values at will
-volatile uint8_t pendingCommand[RCV_COMMAND_MAX_BYTES];
+volatile uint8_t pendingCommand[RECV_COMMAND_MAX_BYTES];
 volatile uint8_t pendingCommandLength = 0;
 
 static dripCounterDataPackage_t dripCounterDataPackage; 
@@ -75,23 +75,30 @@ void MyI2CPeripheral::process(volatile uint8_t *buffer, uint8_t len) {
 /// @brief Returns an appropriate buffer (or more exactly, pointer to the
 /// buffer), and its length, according to received command previously, or default.
 /// The idea is that the response will be sent over to the master.
-SlaveResponse MyI2CPeripheral::getResponse() {
-  SlaveResponse resp;
+/// TLDR: This is where we decide what to send out to the  master.
+SlaveResponse_t MyI2CPeripheral::getResponse() {
+  SlaveResponse_t resp;
 
   switch (currentRegister) {
-  case CMD_GET_STATUS:
-    resp.buffer = &statusValue;
-    resp.size = commandsLookupTable[CMD_GET_STATUS][2];
+  case CMD_TRANSMISSION_TEST:
+    // Make a copy of the received bytes
+    for (uint8_t i = 0; i < COMMANDS_LOOKUP_TABLE[CMD_TRANSMISSION_TEST][1]; i++) {
+      // copy manually, there could be a better way?
+      dripCounterDataPackage.bytes[i] = receivedBytes[i];
+    }
+    resp.buffer = dripCounterDataPackage.bytes + 1;  // 1st byte is the command, ignore it
+    resp.size = COMMANDS_LOOKUP_TABLE[CMD_TRANSMISSION_TEST][2];
+    ESP_LOGD(TAG, "---------- Initialization requested ----------");
     break;
 
   case CMD_SET_TIME:
     resp.buffer = &statusValue;
-    resp.size = commandsLookupTable[CMD_SET_TIME][2];
+    resp.size = COMMANDS_LOOKUP_TABLE[CMD_SET_TIME][2];
     break;
 
   case CMD_GET_TIME:
     resp.buffer = (uint8_t *)&someValue;
-    resp.size = commandsLookupTable[CMD_GET_TIME][2];
+    resp.size = COMMANDS_LOOKUP_TABLE[CMD_GET_TIME][2];
     break;
 
   case CMD_GET_DATA:
@@ -100,7 +107,8 @@ SlaveResponse MyI2CPeripheral::getResponse() {
     dripCounterDataPackage.data.numDrops = numDrops;
 
     resp.buffer = dripCounterDataPackage.bytes;
-    resp.size = commandsLookupTable[CMD_GET_DATA][2];
+    resp.size = COMMANDS_LOOKUP_TABLE[CMD_GET_DATA][2];
+    ESP_LOGD(TAG, "---------- Data requested ----------");
     break;
 
   default:
@@ -116,11 +124,11 @@ SlaveResponse MyI2CPeripheral::getResponse() {
 /// the device
 void onRequest(){
   /*Get the response*/
-  SlaveResponse resp = I2CDevice.getResponse();
+  SlaveResponse_t resp = I2CDevice.getResponse();
 
   /*Send the response to the master*/
   Wire.write(resp.buffer, resp.size);
-  ESP_LOGD(TAG, "Sent [%d] bytes", resp.size);
+  ESP_LOGD(TAG, "Sent [%d] bytes\n", resp.size);
 }
 
 /// @brief This will be called when the device receives bytes of data from the
@@ -134,12 +142,12 @@ void onReceive(int bytesReceived){
   /*Read incoming bytes*/
   for (uint8_t i = 0; i < bytesReceived; i++) {
     receivedBytes[receivedByteIdx] = Wire.read(); // read 1 byte
-    ESP_LOGD(TAG, "Received command: %#x", receivedBytes[0]);
 
     // The 1st byte of the message corresponds to the expected message length
     // See the Commands Lookup Table
     if (!msgLen) {
       msgLen = I2CDevice.expectedReceiveLength(receivedBytes[0]);
+      ESP_LOGD(TAG, "Received command: %#x", receivedBytes[0]);
     }
 
     receivedByteIdx++;
@@ -165,14 +173,14 @@ void onReceive(int bytesReceived){
   }
 }
 
-/// @brief Returns the number of bytes to receive for a given command
+/// @brief Returns the number of bytes to receive for a given message
 /// @param commandID: command ID, see the Commands Lookup Table (CLT)
 /// @return Number of bytes
 uint8_t MyI2CPeripheral::expectedReceiveLength(uint8_t commandID) {
   /*Check if command ID exists in the table*/
-  int rows = sizeof(commandsLookupTable) / sizeof(commandsLookupTable[0]);
+  int rows = sizeof(COMMANDS_LOOKUP_TABLE) / sizeof(COMMANDS_LOOKUP_TABLE[0]);
   if (commandID < rows) {
-    return commandsLookupTable[commandID][1];
+    return COMMANDS_LOOKUP_TABLE[commandID][1];
   } else {
     // Unknown command
     ESP_LOGD(TAG, "Unknown command: %#X", commandID);

@@ -12,7 +12,7 @@ public:
   void i2cInit();
   //   bool commandPending();
   void process(volatile uint8_t *buffer, uint8_t len);
-  SlaveResponse getResponse();
+  SlaveResponse_t getResponse();
   uint8_t expectedReceiveLength(uint8_t commandID);
 
 private:

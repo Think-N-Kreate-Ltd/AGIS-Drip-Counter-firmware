@@ -6,6 +6,7 @@
 #include <DC_Commons.h>
 #include <DC_Utilities.h>
 #include <DC_Logging.h>
+#include <DC_I2C.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -30,6 +31,8 @@ volatile bool displayPowerOffScreen = false;
 volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 
+/*Variables related to I2C*/
+
 /*Function prototypes*/
 void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
@@ -38,18 +41,19 @@ void refreshDisplayTask(void *);
 void powerOffDisplayTask(void *);
 void monitorBatteryTask(void *);
 void IRAM_ATTR powerOffISR();
+void powerOffDisplayTask(void *);
+void processI2CCommandsTask(void * arg);
 
 void setup() {
   Serial.begin(115200);
-
-  /*Power button setup*/
-  // powerButton.setDebounceTime(50);  //TODO: verify again with membrane keypad
-  // powerButton.setCountMode(COUNT_FALLING);
 
   /*GPIO setup*/
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+
+  /*I2C initialization for sending out data, e.g. to AGIS*/
+  I2CDevice.i2cInit();
 
   // pinMode(ADC_ENABLE_PIN, OUTPUT);
   // pinMode(ADC_PIN, INPUT);
@@ -102,6 +106,14 @@ void setup() {
               2,      // higher priority than other display tasks
               NULL);
 
+  /*Create a task for processing I2C commands*/
+  xTaskCreate(processI2CCommandsTask,
+              "Process I2C Commands Task",
+              4096,
+              NULL,
+              configMAX_PRIORITIES-1,      // this should be a very high priority task
+              NULL);
+
   /*Create a task for monitoring battery level*/
   // xTaskCreate(monitorBatteryTask,
   //             "Monitor Battery Task",
@@ -114,8 +126,6 @@ void setup() {
 
 void loop() {
   // Serial.printf("numDrops: %d, \tdripRate: %d\n", numDrops, dripRate);
-  Serial.printf("%d\n", powerButtonHoldCount);
-  delay(500);
 }
 
 /**
@@ -332,5 +342,23 @@ void IRAM_ATTR powerOffISR() {
 
   if(powerButton.isReleased()) {
     powerButtonHoldCount = 0;
+  }
+}
+
+/**
+ * Task to process incoming I2C commands from external devices
+ * @param none
+ * @return none
+ */
+void processI2CCommandsTask(void * arg) {
+  for(;;) {
+
+    if (pendingCommandLength) {
+      I2CDevice.process(pendingCommand, pendingCommandLength);
+      pendingCommandLength = 0;    // process once
+    }
+
+    // free the CPU
+    vTaskDelay(10);
   }
 }

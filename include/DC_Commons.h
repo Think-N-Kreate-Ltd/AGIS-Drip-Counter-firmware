@@ -40,5 +40,6 @@ const char POWER_OFF_SCREEN_STRING[] = "Shut \ndown...";
 /*Externally declared variables*/
 extern volatile unsigned int dripRate;
 extern volatile unsigned int numDrops;
+extern volatile bool firstDropDetected;
 
 #endif /* E993476A_2792_4D1A_AC33_62E9F17CC12A */

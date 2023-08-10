@@ -103,8 +103,12 @@ SlaveResponse_t MyI2CPeripheral::getResponse() {
 
   case CMD_GET_DATA:
     /*Package data before sending out*/
+    // TODO: this seems error-prone if we add new data field,
+    // and we forget to update here.
+    // There could be a better way, like pointer?
     dripCounterDataPackage.data.dripRate = dripRate;
     dripCounterDataPackage.data.numDrops = numDrops;
+    dripCounterDataPackage.data.firstDropDetected = firstDropDetected;
 
     resp.buffer = dripCounterDataPackage.bytes;
     resp.size = COMMANDS_LOOKUP_TABLE[CMD_GET_DATA][2];

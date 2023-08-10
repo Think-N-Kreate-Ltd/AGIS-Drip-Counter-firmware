@@ -16,11 +16,14 @@ static const uint8_t TRANSMISSION_TEST_BUF[] = {
     0x44, 0x72, 0x69, 0x70, 0x20, 0x43,
     0x6F, 0x75, 0x6E, 0x74, 0x65, 0x72};
 
+/// @brief Content of data package to be sent out to the master
+/// Note that the number of bytes of the package is not necessarily the sum
+/// of the size of each member (due to data structure alignment)
 typedef struct dripCounterDataStruct {
     uint16_t dripRate;          // 2 bytes
     uint16_t numDrops;          // 2 bytes
     // uint16_t timeBtw2Drops;     // 2 bytes
-    // bool firstDropDetected;     // 1 byte
+    bool firstDropDetected;     // 1 byte
     // add more...
 } dripCounterData_t;
 

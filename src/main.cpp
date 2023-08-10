@@ -152,15 +152,15 @@ void IRAM_ATTR dropSensorISR() {
       lastTime = millis();
 
       // // FIRST DROP DETECTION
-      // if (!firstDropDetected){
-      //   firstDropDetected = true;
-      //   lastDropTime = -9999; // prevent timeBtw2Drops become inf
+      if (!firstDropDetected){
+        firstDropDetected = true;
+        lastDropTime = -9999; // prevent timeBtw2Drops become inf
 
-      //   if (!lockInfusionStartTime) {
-      //     // mark this as starting time of infusion
-      //     infusionStartTime = millis();
-      //   }
-      // }
+        // if (!lockInfusionStartTime) {
+        //   // mark this as starting time of infusion
+        //   infusionStartTime = millis();
+        // }
+      }
       // if (infusionState != infusionState_t::IN_PROGRESS) {
       //   // TODO: when click "Set and Run" button on the website again to
       //   // start another infusion, infusionState should be IN_PROGRESS but

@@ -48,17 +48,19 @@ void setup() {
   Serial.begin(115200);
 
   /*GPIO setup*/
+  // for drop sensor
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
 
+  // for battery monitoring
+  pinMode(ADC_ENABLE_PIN, OUTPUT);
+  pinMode(ADC_PIN, INPUT);
+  analogReadResolution(12);  // 12bit ADC
+  digitalWrite(ADC_ENABLE_PIN, HIGH);     // turn off PMOS to disconnect voltage divider
+
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
-
-  // pinMode(ADC_ENABLE_PIN, OUTPUT);
-  // pinMode(ADC_PIN, INPUT);
-  // analogReadResolution(12);  // 12bit ADC
-  // digitalWrite(ADC_ENABLE_PIN, HIGH);     // initially, disable to save power
 
   /*Setup for sensor interrupt*/
   attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
@@ -115,12 +117,12 @@ void setup() {
               NULL);
 
   /*Create a task for monitoring battery level*/
-  // xTaskCreate(monitorBatteryTask,
-  //             "Monitor Battery Task",
-  //             4096,
-  //             NULL,
-  //             0,
-  //             NULL);
+  xTaskCreate(monitorBatteryTask,
+              "Monitor Battery Task",
+              4096,
+              NULL,
+              0,
+              NULL);
 }
 
 
@@ -283,7 +285,7 @@ void refreshDisplayTask(void * arg) {
 void powerOffDisplayTask(void * arg) {
   for(;;) {
     if(powerButtonHold) {
-      ESP_LOGD(POWER_LOG_TAG, "Power off screen started");
+      ESP_LOGD(POWER_TAG, "Power off screen started");
       powerOffScreen();
       // vTaskDelay(2000);
       powerButtonHold = false;
@@ -301,11 +303,11 @@ void powerOffDisplayTask(void * arg) {
  * @param none
  * @return none
  */
+// TODO: monitor charge process
 void monitorBatteryTask(void * arg) {
   for(;;) {
     float batteryVoltage = getBatteryVoltage();
-    // Serial.printf("Battery voltage: %f\n", batteryVoltage);
-    Serial.printf("ADC value: %f\n", batteryVoltage);
+    ESP_LOGD(BATTERY_TAG, "Battery voltage: %.2f", batteryVoltage);
 
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);

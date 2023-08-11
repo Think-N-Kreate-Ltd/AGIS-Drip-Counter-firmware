@@ -7,7 +7,7 @@
 #include <esp_log.h>
 #include <DC_Logging.h>
 
-static const char* TAG = "I2C_LOG";
+static const char* TAG = "I2C";
 
 MyI2CPeripheral I2CDevice;
 

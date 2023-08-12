@@ -2,6 +2,5 @@
 #define E2299B70_F2D4_4415_8439_5D25FA9AAAD7
 
 static const char* POWER_TAG = "POWER";
-static const char* BATTERY_TAG = "BATTERY";
 
 #endif /* E2299B70_F2D4_4415_8439_5D25FA9AAAD7 */

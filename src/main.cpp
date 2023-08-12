@@ -54,10 +54,12 @@ void setup() {
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
 
   // for battery monitoring
-  pinMode(ADC_ENABLE_PIN, OUTPUT);
-  pinMode(ADC_PIN, INPUT);
+  pinMode(BATT_ADC_ENABLE_PIN, OUTPUT);
+  pinMode(BATT_ADC_PIN, INPUT);
   analogReadResolution(12);  // 12bit ADC
-  digitalWrite(ADC_ENABLE_PIN, HIGH);     // turn off PMOS to disconnect voltage divider
+  digitalWrite(BATT_ADC_ENABLE_PIN, HIGH);     // turn off PMOS to disconnect voltage divider
+  pinMode(BATT_CHGb_PIN, INPUT);
+  pinMode(BATT_STDBYb_PIN, INPUT);
 
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
@@ -303,11 +305,13 @@ void powerOffDisplayTask(void * arg) {
  * @param none
  * @return none
  */
-// TODO: monitor charge process
 void monitorBatteryTask(void * arg) {
   for(;;) {
+    /*Get battery voltage to estimate remaining percentage*/
     float batteryVoltage = getBatteryVoltage();
-    ESP_LOGD(BATTERY_TAG, "Battery voltage: %.2f", batteryVoltage);
+
+    /*Get battery charging status*/
+    charge_status_t chargeStatus = getChargeStatus();
 
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);

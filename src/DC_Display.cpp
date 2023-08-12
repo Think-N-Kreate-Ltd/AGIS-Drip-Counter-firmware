@@ -2,11 +2,25 @@
 #include <DC_Commons.h>
 // select the display class and display driver class in the following file (new style):
 #include "GxEPD2_display_selection_new_style.h"
+#include <bitmaps/Battery_Bitmaps_16x10.h>
+
+#define STATUS_BAR_HEIGHT                   10
+#define BATTERY_SYMBOL_WIDTH                16
+
+// enum battery_symbol_t {
+//   BATTERY_100_PERCENT,
+//   BATTERY_75_PERCENT,
+//   BATTERY_50_PERCENT,
+//   BATTERY_25_PERCENT,
+//   BATTERY_LOW,
+//   BATTERY_CHARGING,
+//   BATTERY_CHARGE_COMPLETED
+// };
 
 fonts font_xl = {&FreeSansBold18pt7b, 9, 19};
 
 // Initializing the boxes
-partial_box dripRateBox = {0, 0, display.width(), display.height()};
+partial_box dripRateBox = {0, STATUS_BAR_HEIGHT + 1, display.width(), display.height() - (STATUS_BAR_HEIGHT + 1)};
 
 /**
  * Attach Epaper display with SPI pins and set display parameters
@@ -44,7 +58,7 @@ void printRates(struct partial_box box, String rateGtt_str, String rateMLh_str, 
 
   display.getTextBounds(rateMLh_str, box.left, box.top, &tbx, &tby, &tbw, &tbh);
   uint16_t mlh_x = (box.left + box.width/2 - tbw - 1);
-  uint16_t mlh_y = gttString_y + 50;
+  uint16_t mlh_y = gttString_y + 40;
 
   display.getTextBounds(MLH_STRING, box.left, box.top, &tbx, &tby, &tbw, &tbh);
   uint16_t mlhString_x = ((display.width() - tbw) / 2) - tbx;
@@ -122,5 +136,43 @@ void powerOffScreen() {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(x, y);
     display.print(POWER_OFF_SCREEN_STRING);
+  } while (display.nextPage());
+}
+
+void drawBatteryBitmap(float voltage, charge_status_t status) {
+  /*Select corresponding bitmap*/
+  uint8_t *bitmap;
+  if (status == charge_status_t::NOT_CHARGING) {
+    // Display battery symbol with closest remaining level: 100%, 75%, 50%, 25%
+    if (voltage >= 4.0) bitmap = (uint8_t*)batteryBitmap_100percent_16x10;
+    else if (voltage >= 3.9) bitmap = (uint8_t*)batteryBitmap_75percent_16x10;
+    else if (voltage >= 3.8) bitmap = (uint8_t*)batteryBitmap_50percent_16x10;
+    else if (voltage >= 3.7) bitmap = (uint8_t*)batteryBitmap_25percent_16x10;
+    else {
+      // Low battery
+      // TODO: add bitmap
+    }
+  }
+  else if (status == charge_status_t::CHARGING) {
+    // TODO: add bitmap
+  }
+  else if (status == charge_status_t::CHARGE_COMPLETED) {
+    // TODO: add bitmap
+  }
+  else {
+    // Unknown charge status, this will never happen
+    // Do nothing
+  }
+
+  /*Display the selected bitmap*/
+  uint8_t x = display.width() - BATTERY_SYMBOL_WIDTH;
+  uint8_t y = 1;
+  display.setPartialWindow(x, y, BATTERY_SYMBOL_WIDTH, STATUS_BAR_HEIGHT);
+
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.drawInvertedBitmap(x, y, bitmap, BATTERY_SYMBOL_WIDTH,
+                               STATUS_BAR_HEIGHT, GxEPD_BLACK);
   } while (display.nextPage());
 }

@@ -313,6 +313,9 @@ void monitorBatteryTask(void * arg) {
     /*Get battery charging status*/
     charge_status_t chargeStatus = getChargeStatus();
 
+    /*Refresh battery symbol based on battery voltage and charge status*/
+    drawBatteryBitmap(batteryVoltage, chargeStatus);
+
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);
   }

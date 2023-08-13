@@ -9,6 +9,7 @@ static const char* BATTERY_TAG = "BATTERY";
  * @param none
  * @return battery voltage (V)
  */
+// TODO: battery voltage is offset from the measured one. How to compensate?
 float getBatteryVoltage() {
 
   /*NOTE: this whole process takes less than 150ms to complete (checked with scope)*/

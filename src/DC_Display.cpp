@@ -150,14 +150,14 @@ void drawBatteryBitmap(float voltage, charge_status_t status) {
     else if (voltage >= 3.7) bitmap = (uint8_t*)batteryBitmap_25percent_16x10;
     else {
       // Low battery
-      // TODO: add bitmap
+      bitmap = (uint8_t*)batteryBitmap_low_16x10;
     }
   }
   else if (status == charge_status_t::CHARGING) {
-    // TODO: add bitmap
+    bitmap = (uint8_t*)batteryBitmap_charging_16x10;
   }
   else if (status == charge_status_t::CHARGE_COMPLETED) {
-    // TODO: add bitmap
+    bitmap = (uint8_t*)batteryBitmap_charge_completed_16x10;
   }
   else {
     // Unknown charge status, this will never happen

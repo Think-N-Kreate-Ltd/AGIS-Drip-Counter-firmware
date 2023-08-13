@@ -32,7 +32,7 @@
 /*Constant definitions*/
 #define DROP_DEBOUNCE_TIME   10    // if two pulses are generated within debounce time, it must be detected as 1 drop
 #define DISPLAY_REFRESH_TIME 1000  // time between display refresh
-#define BATTERY_MONITOR_TIME 5000  // time between battery monitor
+#define BATTERY_MONITOR_TIME 1000  // time between battery monitor
 
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";

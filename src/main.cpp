@@ -25,9 +25,7 @@ hw_timer_t *Timer1_cfg = NULL; // create a pointer for timer1
 
 /*Other variables*/
 volatile bool turnOnLed = false;          // used to turn on the LED for a short time
-volatile bool powerButtonPressed = false;
 volatile bool powerButtonHold = false;
-volatile bool displayPowerOffScreen = false;
 volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 
@@ -265,6 +263,7 @@ void dropDetectedLEDTask(void * arg) {
 void refreshDisplayTask(void * arg) {
   for(;;) {
     if(!powerButtonHold) {
+      // TODO: only refresh display if rate has changed from current one
       static char rateGtt_buf[10];
       static char rateMLh_buf[10];
       sprintf(rateGtt_buf, "%d", dripRate);
@@ -286,15 +285,22 @@ void refreshDisplayTask(void * arg) {
 void powerOffDisplayTask(void * arg) {
   for(;;) {
     if(powerButtonHold) {
-      ESP_LOGD(POWER_TAG, "Power off screen started");
+      ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
-      // vTaskDelay(2000);
-      powerButtonHold = false;
-      displayPowerOffScreen = true;  // to notify powerOffISR()
+
+      //TODO: clean up before power off
+
+      /*power off now*/
+      ESP_LOGD(POWER_TAG, "Power off now");
+      while (true) {
+        pinMode(LATCH_IO_PIN, OUTPUT);
+        digitalWrite(LATCH_IO_PIN, LOW);
+        vTaskDelay(100);
+      }
     }
 
     // free the CPU
-    vTaskDelay(100);
+    vTaskDelay(10);
   }
 }
 
@@ -326,29 +332,14 @@ void monitorBatteryTask(void * arg) {
  * @return none
  */
 void IRAM_ATTR powerOffISR() {
-
   powerButton.loop();
-  if(!powerButton.getState()) {
+  if(!powerButton.getState() && !powerButtonHold) {
     powerButtonHoldCount++;
   }
 
-  if(powerButtonHoldCount >= 500 && !displayPowerOffScreen) {
-    /*raise the flag to display power off screen but not shut down yet*/
+  if(powerButtonHoldCount >= 50) {
+    // signal task to power off
     powerButtonHold = true;
-  }
-  
-  if(powerButtonHoldCount >= 2000){
-    /*clean up program before shutdown*/
-    //TODO: what needs to be cleaned up?
-
-    // ESP_LOGI(POWER_LOG_TAG, "Shut down now");
-
-    /*shut down now*/
-    pinMode(LATCH_IO_PIN, OUTPUT);
-    digitalWrite(LATCH_IO_PIN, LOW);
-  }
-
-  if(powerButton.isReleased()) {
     powerButtonHoldCount = 0;
   }
 }

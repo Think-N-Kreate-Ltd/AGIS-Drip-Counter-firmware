@@ -7,6 +7,7 @@
 #include <DC_Utilities.h>
 #include <DC_Logging.h>
 #include <DC_I2C.h>
+#include <semphr.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -30,6 +31,9 @@ volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 
 /*Variables related to I2C*/
+
+/*Mutex to keep different tasks from controlling the display at the same time*/
+SemaphoreHandle_t  displayMutex;
 
 /*Function prototypes*/
 void IRAM_ATTR dropSensorISR();
@@ -78,6 +82,10 @@ void setup() {
                        false);
   timerAlarmWrite(Timer1_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
   timerAlarmEnable(Timer1_cfg);
+
+  /*Initialize mutex*/
+  displayMutex = xSemaphoreCreateMutex();
+  assert(displayMutex);
 
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
@@ -262,6 +270,7 @@ void dropDetectedLEDTask(void * arg) {
  */
 void refreshDisplayTask(void * arg) {
   for(;;) {
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
     if(!powerButtonHold) {
       // TODO: only refresh display if rate has changed from current one
       static char rateGtt_buf[10];
@@ -271,6 +280,7 @@ void refreshDisplayTask(void * arg) {
 
       printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
     }
+    xSemaphoreGive(displayMutex);
 
     // free the CPU
     vTaskDelay(DISPLAY_REFRESH_TIME);
@@ -284,6 +294,7 @@ void refreshDisplayTask(void * arg) {
  */
 void powerOffDisplayTask(void * arg) {
   for(;;) {
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
     if(powerButtonHold) {
       ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
@@ -298,6 +309,7 @@ void powerOffDisplayTask(void * arg) {
         vTaskDelay(100);
       }
     }
+    xSemaphoreGive(displayMutex);
 
     // free the CPU
     vTaskDelay(10);
@@ -319,7 +331,9 @@ void monitorBatteryTask(void * arg) {
     charge_status_t chargeStatus = getChargeStatus();
 
     /*Refresh battery symbol based on battery voltage and charge status*/
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
     drawBatteryBitmap(batteryVoltage, chargeStatus);
+    xSemaphoreGive(displayMutex);
 
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);

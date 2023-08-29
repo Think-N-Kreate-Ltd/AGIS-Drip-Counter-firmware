@@ -123,7 +123,7 @@ void startScreen() {
  * @return none
  */
 void powerOffScreen() {
-  display.clearScreen();
+  display.clearScreen(); // without this, the display will not be clear in very rare cases
 
   display.setRotation(2);
   display.setFont(&FreeMonoBold9pt7b);

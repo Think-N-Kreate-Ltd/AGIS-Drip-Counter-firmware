@@ -84,7 +84,6 @@ void setup() {
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
   startScreen();
-  delay(500);
 
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,

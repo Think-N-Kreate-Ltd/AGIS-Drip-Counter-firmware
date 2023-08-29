@@ -30,10 +30,7 @@ partial_box dripRateBox = {0, STATUS_BAR_HEIGHT + 1, display.width(), display.he
 void displayInit() {
   SPI.end(); // release standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
   SPI.begin(SPI_EPD_CLK, SPI_EPD_MISO, SPI_EPD_MOSI, SPI_EPD_CS); // map and init SPI pins SCK(13), MISO(12), MOSI(14), SS(15)
-  display.init(0UL, true);
-  display.setRotation(2);
-  display.setFont(font_xl.font);
-  display.setTextColor(GxEPD_BLACK);
+  display.init(115200, true); // TODO: look into bitrate used here
 }
 
 /**
@@ -113,6 +110,11 @@ void startScreen() {
     display.setCursor(x, y);
     display.print(START_SCREEN_STRING);
   } while (display.nextPage());
+
+  // Clear the screen to avoid overlap
+  display.clearScreen();
+  // May need to wait a bit to fully clear the display
+  // delay(500);
 }
 
 /**

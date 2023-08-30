@@ -109,6 +109,12 @@ void startScreen() {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(x, y);
     display.print(START_SCREEN_STRING);
+
+#ifdef SHOW_VERSION
+    display.setCursor(0, 100);
+    display.print(VERSION_STRING);
+#endif
+
   } while (display.nextPage());
 
   // Clear the screen to avoid overlap

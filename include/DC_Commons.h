@@ -35,14 +35,16 @@
 #define DC_I2C_FREQ         1000000 // 100khz
 
 /*Constant definitions*/
-#define DROP_DEBOUNCE_TIME   10    // if two pulses are generated within debounce time, it must be detected as 1 drop
-#define DISPLAY_REFRESH_TIME 1000  // time between display refresh
-#define BATTERY_MONITOR_TIME 1000  // time between battery monitor
+#define DROP_DEBOUNCE_TIME     10     // if two pulses are generated within debounce time, it must be detected as 1 drop
+#define DISPLAY_REFRESH_TIME   1000   // time between display refresh
+#define BATTERY_MONITOR_TIME   5000  // time between battery monitor, 5s
+#define POPUP_WINDOW_HOLD_TIME 2000   // time duration of each pop-up window, 2s
 
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";
-const char START_SCREEN_STRING[] = "Drip \nCounter";
-const char POWER_OFF_SCREEN_STRING[] = "Shut \ndown...";
+const char START_SCREEN_STRING[] = " Drip\nCounter";
+const char POWER_OFF_SCREEN_STRING[] = "Shut\ndown...";
+const char BATTERY_LOW_STRING[] = "WARNING\n\nBattery \n  Low";
 
 /*Externally declared variables*/
 extern volatile unsigned int dripRate;

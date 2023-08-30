@@ -15,9 +15,11 @@
 #define SPI_EPD_RST          48
 #define SPI_EPD_DC           47
 
-// Battery monitoring - ADC
-#define ADC_ENABLE_PIN       46
-#define ADC_PIN              3
+// Battery monitoring - ADC and charge status indicator
+#define BATT_ADC_ENABLE_PIN  46
+#define BATT_ADC_PIN         3
+#define BATT_CHGb_PIN        11
+#define BATT_STDBYb_PIN      12
 
 // Latch pin for power on/off
 #define LATCH_IO_PIN         9
@@ -30,7 +32,7 @@
 /*Constant definitions*/
 #define DROP_DEBOUNCE_TIME   10    // if two pulses are generated within debounce time, it must be detected as 1 drop
 #define DISPLAY_REFRESH_TIME 1000  // time between display refresh
-#define BATTERY_MONITOR_TIME 5000  // time between battery monitor
+#define BATTERY_MONITOR_TIME 1000  // time between battery monitor
 
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";

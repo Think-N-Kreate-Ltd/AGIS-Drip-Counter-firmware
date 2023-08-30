@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3 (0e150ed6c4, 2023-07-21)"
+   sodipodi:docname="Drip-Counter-bitmaps-inkscape.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:export-bgcolor="#ffffffff"
+     inkscape:zoom="5.6568543"
+     inkscape:cx="96.78524"
+     inkscape:cy="10.69499"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="204"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="display:inline;vector-effect:non-scaling-stroke;fill:none;stroke:#000000;stroke-width:0.267329;stroke-dasharray:none;stroke-opacity:1;-inkscape-stroke:hairline"
+       id="rect3"
+       width="21.166666"
+       height="33.866665"
+       x="-2.7755576e-17"
+       y="-2.7755576e-17"
+       sodipodi:insensitive="true" />
+    <g
+       id="g37">
+      <rect
+         style="fill:none;fill-opacity:1;stroke:#060202;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1"
+         width="3.710448"
+         height="2.387532"
+         x="25.12915"
+         y="2.1291511"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-100-percent.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9"
+         width="0.45091787"
+         height="1.5092512"
+         x="25.568291"
+         y="2.5682912"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5"
+         width="0.45091787"
+         height="1.5092512"
+         x="26.362041"
+         y="2.5682912"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#080202;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-2"
+         width="0.45091787"
+         height="1.5092512"
+         x="27.15579"
+         y="2.5682912"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5"
+         width="0.45091787"
+         height="1.5092512"
+         x="27.949541"
+         y="2.5682912"
+         ry="0"
+         rx="0" />
+    </g>
+    <g
+       id="g4"
+       inkscape:export-filename="battery-75-percent.svg"
+       inkscape:export-xdpi="102.4"
+       inkscape:export-ydpi="102.4">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54"
+         width="3.710448"
+         height="2.387532"
+         x="25.12915"
+         y="6.1291509"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-100-percent.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-3"
+         width="0.45091787"
+         height="1.5092512"
+         x="25.568291"
+         y="6.5682912"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-0"
+         width="0.45091787"
+         height="1.5092512"
+         x="26.362041"
+         y="6.5682912"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-2-4"
+         width="0.45091787"
+         height="1.5092512"
+         x="27.15579"
+         y="6.5682912"
+         ry="0"
+         rx="0" />
+    </g>
+    <g
+       id="g5"
+       inkscape:export-filename="battery-50-percent.svg"
+       inkscape:export-xdpi="102.4"
+       inkscape:export-ydpi="102.4">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-7"
+         width="3.710448"
+         height="2.387532"
+         x="25.12915"
+         y="10.129151"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-100-percent.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-3-8"
+         width="0.45091787"
+         height="1.5092512"
+         x="25.568291"
+         y="10.568291"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-0-5"
+         width="0.45091787"
+         height="1.5092512"
+         x="26.362041"
+         y="10.568291"
+         ry="0"
+         rx="0" />
+    </g>
+    <g
+       id="g6"
+       inkscape:export-filename="battery-25-percent.svg"
+       inkscape:export-xdpi="102.4"
+       inkscape:export-ydpi="102.4">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9"
+         width="3.710448"
+         height="2.387532"
+         x="25.12915"
+         y="14.129151"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-100-percent.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-3-5"
+         width="0.45091787"
+         height="1.5092512"
+         x="25.568291"
+         y="14.568292"
+         ry="0"
+         rx="0" />
+    </g>
+    <g
+       id="g3-9"
+       transform="translate(-6.7557185,-2.49446)">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-5"
+         width="3.710448"
+         height="2.387532"
+         x="23.94165"
+         y="2.7749844"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-100-percent.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-8"
+         width="0.45091787"
+         height="1.5092512"
+         x="24.380791"
+         y="3.2141244"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-8"
+         width="0.45091787"
+         height="1.5092512"
+         x="25.174541"
+         y="3.2141244"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-2-7"
+         width="0.45091787"
+         height="1.5092512"
+         x="25.96829"
+         y="3.2141244"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-9"
+         width="0.45091787"
+         height="1.5092512"
+         x="26.762041"
+         y="3.2141244"
+         ry="0"
+         rx="0" />
+    </g>
+    <g
+       id="g29"
+       transform="translate(0,-0.10839829)">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9-5"
+         width="3.710448"
+         height="2.387532"
+         x="35.12915"
+         y="2.2458177"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-charging.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#f4d7d7;fill-opacity:1;stroke:#ffffff;stroke-width:0.396313;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29"
+         width="0.79431224"
+         height="0.041903112"
+         x="37.008312"
+         y="2.3065548" />
+      <rect
+         style="fill:#f4d7d7;fill-opacity:1;stroke:#ffffff;stroke-width:0.402833;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-1"
+         width="0.78779238"
+         height="0.043651477"
+         x="36.068989"
+         y="4.5587735" />
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.132951;stroke-dasharray:none;stroke-opacity:1"
+         d="M 36.296838,3.5049265 37.502769,2.1610643 37.04044,3.2711896 h 0.611563 l -1.298465,1.4469771 0.498354,-1.1966149 z"
+         id="path6" />
+    </g>
+    <g
+       id="g32"
+       inkscape:export-filename="battery-charge-completed.svg"
+       inkscape:export-xdpi="105.5"
+       inkscape:export-ydpi="105.5"
+       transform="translate(0,-0.11117493)">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9-5-9"
+         width="3.710448"
+         height="2.387532"
+         x="42.330193"
+         y="2.254086"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-charging.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#f4d7d7;fill-opacity:1;stroke:#ffffff;stroke-width:0.39657;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-4"
+         width="0.80025619"
+         height="0.041645885"
+         x="44.643929"
+         y="2.3094599" />
+      <rect
+         style="fill:#f4d7d7;fill-opacity:1;stroke:#ffffff;stroke-width:0.402833;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-1-7"
+         width="0.78779238"
+         height="0.043651477"
+         x="43.792347"
+         y="4.5339689" />
+      <path
+         style="opacity:1;fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.184276;stroke-dasharray:none;stroke-opacity:1"
+         d="m 43.856858,3.5059409 h -0.288772 l 0.399457,1.1644211 h 0.422916 l 0.84444,-2.4615573 H 44.92406 l -0.726671,2.1182524 z"
+         id="path32" />
+    </g>
+    <g
+       id="g36">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9-5-9-4"
+         width="3.710448"
+         height="2.387532"
+         x="50.12915"
+         y="2.2549973"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-low.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#f4d7d7;fill-opacity:1;stroke:#ffffff;stroke-width:0.298061;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-4-9"
+         width="0.5763042"
+         height="0.032667823"
+         x="51.723904"
+         y="2.2656972" />
+      <rect
+         style="fill:#f4d7d7;fill-opacity:1;stroke:#ffffff;stroke-width:0.431018;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-1-7-5"
+         width="2.5455441"
+         height="0.01546579"
+         x="50.720695"
+         y="4.5452843" />
+      <rect
+         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.218109;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-1-7-5-6"
+         width="0.57564104"
+         height="0.046475083"
+         x="3.0194712"
+         y="-52.02911"
+         transform="rotate(90)" />
+      <rect
+         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.151197;stroke-dasharray:none;stroke-opacity:1"
+         id="rect29-1-7-5-6-5"
+         width="0.11338571"
+         height="0.1133859"
+         x="4.0443487"
+         y="-52.064857"
+         transform="rotate(90)" />
+      <path
+         sodipodi:type="star"
+         style="opacity:1;fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.824964;stroke-dasharray:none;stroke-opacity:1"
+         id="path36"
+         inkscape:flatsided="false"
+         sodipodi:sides="3"
+         sodipodi:cx="37.768524"
+         sodipodi:cy="14.265511"
+         sodipodi:r1="4.6051588"
+         sodipodi:r2="2.3025792"
+         sodipodi:arg1="0.52359878"
+         sodipodi:arg2="1.5707963"
+         inkscape:rounded="-3.469447e-18"
+         inkscape:randomized="0"
+         d="m 41.756709,16.56809 -3.988185,0 -3.988184,0 1.994092,-3.453869 1.994092,-3.4538692 1.994092,3.4538692 z"
+         inkscape:transform-center-y="-0.37432607"
+         transform="matrix(0.28535964,0,0,0.32513633,41.224386,-0.74850057)" />
+    </g>
+  </g>
+</svg>

@@ -7,6 +7,7 @@
 #include <DC_Utilities.h>
 #include <DC_Logging.h>
 #include <DC_I2C.h>
+#include <semphr.h>
 
 /*Variables for monitoring dripping parameters*/
 ezButton dropSensor(DROP_SENSOR_PIN);     // create ezButton object that attaches to drop sensor pin
@@ -25,13 +26,14 @@ hw_timer_t *Timer1_cfg = NULL; // create a pointer for timer1
 
 /*Other variables*/
 volatile bool turnOnLed = false;          // used to turn on the LED for a short time
-volatile bool powerButtonPressed = false;
 volatile bool powerButtonHold = false;
-volatile bool displayPowerOffScreen = false;
 volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 
 /*Variables related to I2C*/
+
+/*Mutex to keep different tasks from controlling the display at the same time*/
+SemaphoreHandle_t  displayMutex;
 
 /*Function prototypes*/
 void IRAM_ATTR dropSensorISR();
@@ -48,17 +50,21 @@ void setup() {
   Serial.begin(115200);
 
   /*GPIO setup*/
+  // for drop sensor
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
 
+  // for battery monitoring
+  pinMode(BATT_ADC_ENABLE_PIN, OUTPUT);
+  pinMode(BATT_ADC_PIN, INPUT);
+  analogReadResolution(12);  // 12bit ADC
+  digitalWrite(BATT_ADC_ENABLE_PIN, HIGH);     // turn off PMOS to disconnect voltage divider
+  pinMode(BATT_CHGb_PIN, INPUT);
+  pinMode(BATT_STDBYb_PIN, INPUT);
+
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
-
-  // pinMode(ADC_ENABLE_PIN, OUTPUT);
-  // pinMode(ADC_PIN, INPUT);
-  // analogReadResolution(12);  // 12bit ADC
-  // digitalWrite(ADC_ENABLE_PIN, HIGH);     // initially, disable to save power
 
   /*Setup for sensor interrupt*/
   attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
@@ -77,10 +83,13 @@ void setup() {
   timerAlarmWrite(Timer1_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
   timerAlarmEnable(Timer1_cfg);
 
+  /*Initialize mutex*/
+  displayMutex = xSemaphoreCreateMutex();
+  assert(displayMutex);
+
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
   startScreen();
-  delay(500);
 
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,
@@ -115,12 +124,12 @@ void setup() {
               NULL);
 
   /*Create a task for monitoring battery level*/
-  // xTaskCreate(monitorBatteryTask,
-  //             "Monitor Battery Task",
-  //             4096,
-  //             NULL,
-  //             0,
-  //             NULL);
+  xTaskCreate(monitorBatteryTask,
+              "Monitor Battery Task",
+              4096,
+              NULL,
+              0,
+              NULL);
 }
 
 
@@ -261,7 +270,9 @@ void dropDetectedLEDTask(void * arg) {
  */
 void refreshDisplayTask(void * arg) {
   for(;;) {
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
     if(!powerButtonHold) {
+      // TODO: only refresh display if rate has changed from current one
       static char rateGtt_buf[10];
       static char rateMLh_buf[10];
       sprintf(rateGtt_buf, "%d", dripRate);
@@ -269,6 +280,7 @@ void refreshDisplayTask(void * arg) {
 
       printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
     }
+    xSemaphoreGive(displayMutex);
 
     // free the CPU
     vTaskDelay(DISPLAY_REFRESH_TIME);
@@ -282,16 +294,25 @@ void refreshDisplayTask(void * arg) {
  */
 void powerOffDisplayTask(void * arg) {
   for(;;) {
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
     if(powerButtonHold) {
-      ESP_LOGD(POWER_LOG_TAG, "Power off screen started");
+      ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
-      // vTaskDelay(2000);
-      powerButtonHold = false;
-      displayPowerOffScreen = true;  // to notify powerOffISR()
+
+      //TODO: clean up before power off
+
+      /*power off now*/
+      ESP_LOGD(POWER_TAG, "Power off now");
+      while (true) {
+        pinMode(LATCH_IO_PIN, OUTPUT);
+        digitalWrite(LATCH_IO_PIN, LOW);
+        vTaskDelay(100);
+      }
     }
+    xSemaphoreGive(displayMutex);
 
     // free the CPU
-    vTaskDelay(100);
+    vTaskDelay(10);
   }
 }
 
@@ -303,9 +324,16 @@ void powerOffDisplayTask(void * arg) {
  */
 void monitorBatteryTask(void * arg) {
   for(;;) {
+    /*Get battery voltage to estimate remaining percentage*/
     float batteryVoltage = getBatteryVoltage();
-    // Serial.printf("Battery voltage: %f\n", batteryVoltage);
-    Serial.printf("ADC value: %f\n", batteryVoltage);
+
+    /*Get battery charging status*/
+    charge_status_t chargeStatus = getChargeStatus();
+
+    /*Refresh battery symbol based on battery voltage and charge status*/
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
+    drawBatteryBitmap(batteryVoltage, chargeStatus);
+    xSemaphoreGive(displayMutex);
 
     // free the CPU
     vTaskDelay(BATTERY_MONITOR_TIME);
@@ -318,29 +346,14 @@ void monitorBatteryTask(void * arg) {
  * @return none
  */
 void IRAM_ATTR powerOffISR() {
-
   powerButton.loop();
-  if(!powerButton.getState()) {
+  if(!powerButton.getState() && !powerButtonHold) {
     powerButtonHoldCount++;
   }
 
-  if(powerButtonHoldCount >= 500 && !displayPowerOffScreen) {
-    /*raise the flag to display power off screen but not shut down yet*/
+  if(powerButtonHoldCount >= 50) {
+    // signal task to power off
     powerButtonHold = true;
-  }
-  
-  if(powerButtonHoldCount >= 2000){
-    /*clean up program before shutdown*/
-    //TODO: what needs to be cleaned up?
-
-    // ESP_LOGI(POWER_LOG_TAG, "Shut down now");
-
-    /*shut down now*/
-    pinMode(LATCH_IO_PIN, OUTPUT);
-    digitalWrite(LATCH_IO_PIN, LOW);
-  }
-
-  if(powerButton.isReleased()) {
     powerButtonHoldCount = 0;
   }
 }

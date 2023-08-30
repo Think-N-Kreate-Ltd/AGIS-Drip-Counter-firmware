@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="3.96875mm"
+   height="2.645834mm"
+   viewBox="0 0 3.96875 2.645834"
+   version="1.1"
+   id="svg1"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:export-bgcolor="#ffffffff" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-23.812499,-2.6458334)">
+    <rect
+       style="fill:#ffffff;stroke:#000000;stroke-width:0.258302;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-1"
+       width="3.710448"
+       height="2.387532"
+       x="23.94165"
+       y="2.7749844"
+       ry="0"
+       rx="0"
+       inkscape:export-filename="battery-100-percent.png"
+       inkscape:export-xdpi="105.5"
+       inkscape:export-ydpi="105.5" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-7-9"
+       width="0.45091787"
+       height="1.5092512"
+       x="24.380791"
+       y="3.2141244"
+       ry="0"
+       rx="0" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-7-9-5"
+       width="0.45091787"
+       height="1.5092512"
+       x="25.174541"
+       y="3.2141244"
+       ry="0"
+       rx="0" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-7-9-2"
+       width="0.45091787"
+       height="1.5092512"
+       x="25.96829"
+       y="3.2141244"
+       ry="0"
+       rx="0" />
+    <rect
+       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0782488;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1-7-9-5-5"
+       width="0.45091787"
+       height="1.5092512"
+       x="26.762041"
+       y="3.2141244"
+       ry="0"
+       rx="0" />
+  </g>
+</svg>

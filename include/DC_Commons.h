@@ -1,6 +1,11 @@
 #ifndef E993476A_2792_4D1A_AC33_62E9F17CC12A
 #define E993476A_2792_4D1A_AC33_62E9F17CC12A
 
+#include <version.h>
+
+// Comment to remove version from start screen
+#define SHOW_VERSION
+
 /*GPIO definitions*/
 // Drop sensor
 #define DROP_SENSOR_PIN      18 // input pin for geting output from sensor

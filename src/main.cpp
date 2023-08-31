@@ -26,7 +26,7 @@ hw_timer_t *Timer1_cfg = NULL; // create a pointer for timer1
 
 /*Other variables*/
 volatile bool turnOnLed = false;          // used to turn on the LED for a short time
-volatile bool powerButtonHold = false;
+volatile bool enablePowerOff = false;
 volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 
@@ -40,10 +40,10 @@ void IRAM_ATTR dropSensorISR();
 void IRAM_ATTR dripCountUpdateISR();
 void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
-void powerOffDisplayTask(void *);
+void powerOffTask(void *);
 void monitorBatteryTask(void *);
 void IRAM_ATTR powerOffISR();
-void powerOffDisplayTask(void *);
+void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
 
 void setup() {
@@ -107,9 +107,9 @@ void setup() {
               1,
               NULL);
 
-  /*Create a task for displaying shutdown screen*/
-  xTaskCreate(powerOffDisplayTask,
-              "Power Off Display Task",
+  /*Create a task for software power off*/
+  xTaskCreate(powerOffTask,
+              "Power Off Task",
               4096,
               NULL,
               2,      // higher priority than other display tasks
@@ -211,7 +211,7 @@ void IRAM_ATTR dripCountUpdateISR() {
   int dropSensorState = dropSensor.getStateRaw();
   if (dropSensorState == 0) {
     timeWithNoDrop++;
-    if (timeWithNoDrop >= 20000) {
+    if (timeWithNoDrop >= NO_DROP_ALARM_TIME) {
       // reset these values
       firstDropDetected = false;
       timeBtw2Drops = UINT_MAX;
@@ -230,6 +230,14 @@ void IRAM_ATTR dripCountUpdateISR() {
       // lockInfusionStartTime = true;
       // }
     }
+
+    // TODO: User button can be used to start monitoring infusion.
+    // When user button is pressed, auto-off function will be disabled. 
+    // E.g. when there is an alarm, it should remain alarm and not auto-off.
+    if (timeWithNoDrop >= NO_DROP_AUTO_OFF_TIME) {
+      enablePowerOff = true;
+    }
+
   } else {
     timeWithNoDrop = 0;
   }
@@ -271,15 +279,13 @@ void dropDetectedLEDTask(void * arg) {
 void refreshDisplayTask(void * arg) {
   for(;;) {
     xSemaphoreTake(displayMutex, portMAX_DELAY);
-    if(!powerButtonHold) {
-      // TODO: only refresh display if rate has changed from current one
-      static char rateGtt_buf[10];
-      static char rateMLh_buf[10];
-      sprintf(rateGtt_buf, "%d", dripRate);
-      sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
+    // TODO: only refresh display if rate has changed from current one
+    static char rateGtt_buf[10];
+    static char rateMLh_buf[10];
+    sprintf(rateGtt_buf, "%d", dripRate);
+    sprintf(rateMLh_buf, "%d", dripRate * (60 / dropFactor));
 
-      printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
-    }
+    printRates(dripRateBox, rateGtt_buf, rateMLh_buf, font_xl);
     xSemaphoreGive(displayMutex);
 
     // free the CPU
@@ -288,14 +294,14 @@ void refreshDisplayTask(void * arg) {
 }
 
 /**
- * Task to display the power off screen to notify user
+ * Task to display the power off screen, clean up, and then power off
  * @param none
  * @return none
  */
-void powerOffDisplayTask(void * arg) {
+void powerOffTask(void * arg) {
   for(;;) {
     xSemaphoreTake(displayMutex, portMAX_DELAY);
-    if(powerButtonHold) {
+    if(enablePowerOff) {
       ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
 
@@ -363,13 +369,13 @@ void monitorBatteryTask(void * arg) {
  */
 void IRAM_ATTR powerOffISR() {
   powerButton.loop();
-  if(!powerButton.getState() && !powerButtonHold) {
+  if(!powerButton.getState() && !enablePowerOff) {
     powerButtonHoldCount++;
   }
 
   if(powerButtonHoldCount >= 50) {
     // signal task to power off
-    powerButtonHold = true;
+    enablePowerOff = true;
     powerButtonHoldCount = 0;
   }
 }

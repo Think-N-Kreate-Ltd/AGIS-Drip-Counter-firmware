@@ -159,10 +159,18 @@ void drawBatteryBitmap(float voltage, charge_status_t status) {
   uint8_t *bitmap;
   if (status == charge_status_t::NOT_CHARGING) {
     // Display battery symbol with closest remaining level: 100%, 75%, 50%, 25%
-    if (voltage >= 4.0) bitmap = (uint8_t*)batteryBitmap_100percent_16x10;
-    else if (voltage >= 3.9) bitmap = (uint8_t*)batteryBitmap_75percent_16x10;
-    else if (voltage >= 3.8) bitmap = (uint8_t*)batteryBitmap_50percent_16x10;
-    else if (voltage >= 3.7) bitmap = (uint8_t*)batteryBitmap_25percent_16x10;
+    if (voltage >= BATTERY_100_PERCENT_THRESHOLD_VOLTAGE) {
+      bitmap = (uint8_t*)batteryBitmap_100percent_16x10;
+    }
+    else if (voltage >= BATTERY_75_PERCENT_THRESHOLD_VOLTAGE) {
+      bitmap = (uint8_t*)batteryBitmap_75percent_16x10;
+    }
+    else if (voltage >= BATTERY_50_PERCENT_THRESHOLD_VOLTAGE) {
+      bitmap = (uint8_t*)batteryBitmap_50percent_16x10;
+    }
+    else if (voltage >= BATTERY_25_PERCENT_THRESHOLD_VOLTAGE) {
+      bitmap = (uint8_t*)batteryBitmap_25percent_16x10;
+    }
     else {
       // Low battery
       bitmap = (uint8_t*)batteryBitmap_low_16x10;
@@ -189,5 +197,37 @@ void drawBatteryBitmap(float voltage, charge_status_t status) {
     display.fillScreen(GxEPD_WHITE);
     display.drawInvertedBitmap(x, y, bitmap, BATTERY_SYMBOL_WIDTH,
                                STATUS_BAR_HEIGHT, GxEPD_BLACK);
+  } while (display.nextPage());
+}
+
+/// @brief Display a pop-up window (regtanle shape with boundary) to show some important message
+/// @param message Message to be shown within the pop-up window. The message length should be very short!
+void displayPopup(const char * message) {
+  display.setRotation(2);
+  display.setFont(&FreeMonoBold9pt7b);
+  display.setTextColor(GxEPD_BLACK);
+
+  // Explain:
+  // Pop-up window is basically (entire window - status bar)
+
+  int16_t tbx, tby;
+  uint16_t tbw, tbh;
+  display.getTextBounds(message, 0, 0, &tbx, &tby, &tbw, &tbh);
+  // center bounding box by transposition of origin:
+  uint16_t x = ((display.width() - tbw) / 2) - tbx;
+  uint16_t y = ((display.height() - tbh) / 2) - tby;
+
+  uint16_t popupWidth = display.width();
+  uint16_t popupHeight = display.height() - (STATUS_BAR_HEIGHT + 1);
+  uint16_t popup_y = STATUS_BAR_HEIGHT + 1;
+
+  display.setPartialWindow(0, popup_y, popupWidth, popupHeight);
+
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.fillRect(0, popup_y, popupWidth, popupHeight, GxEPD_WHITE);
+    display.setCursor(x, y);
+    display.print(message);
   } while (display.nextPage());
 }

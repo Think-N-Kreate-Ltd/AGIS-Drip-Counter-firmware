@@ -303,12 +303,17 @@ void powerOffDisplayTask(void * arg) {
 
       /*power off now*/
       ESP_LOGD(POWER_TAG, "Power off now");
+      pinMode(LATCH_IO_PIN, OUTPUT);
+      digitalWrite(LATCH_IO_PIN, LOW);
+
+      // It will take 3s to fully discharge the capacitor to power off.
+      // Block other tasks from controlling the display during this time.
       while (true) {
-        pinMode(LATCH_IO_PIN, OUTPUT);
-        digitalWrite(LATCH_IO_PIN, LOW);
         vTaskDelay(100);
       }
     }
+
+    // The program should never reach here, since it is already powered off.
     xSemaphoreGive(displayMutex);
 
     // free the CPU
@@ -326,6 +331,17 @@ void monitorBatteryTask(void * arg) {
   for(;;) {
     /*Get battery voltage to estimate remaining percentage*/
     float batteryVoltage = getBatteryVoltage();
+
+    /*Battery low check*/
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
+    if (batteryVoltage < BATTERY_LOW_THRESHOLD_VOLTAGE) {
+      displayPopup(BATTERY_LOW_STRING);
+    }
+    vTaskDelay(POPUP_WINDOW_HOLD_TIME);
+    // TODO: mutex will not be released until vTaskDelay() finishes.
+    // If user hits the power off button during this delay time, the
+    // display will not turn off immediately. How to improve this?
+    xSemaphoreGive(displayMutex);
 
     /*Get battery charging status*/
     charge_status_t chargeStatus = getChargeStatus();

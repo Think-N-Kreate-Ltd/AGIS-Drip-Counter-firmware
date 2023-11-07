@@ -272,7 +272,7 @@ void dropDetectedLEDTask(void * arg) {
 }
 
 /**
- * Refresh Epaper display every 1 second
+ * Refresh Epaper display every `DISPLAY_REFRESH_TIME` second
  * @param none
  * @return none
  */

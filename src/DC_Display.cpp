@@ -65,6 +65,9 @@ void printRates(struct partial_box box, const String &rateGtt_str, String rateML
   uint16_t mlhString_x = ((display.width() - tbw) / 2) - tbx;
   uint16_t mlhString_y = mlh_y + 20;
 
+  // TODO: why partial update below takes so long (> 1000 ms)?
+  // int previous = millis();
+
   display.firstPage();
   do{
     display.fillRect(box.left, box.top, box.width, box.height, GxEPD_WHITE);
@@ -90,6 +93,8 @@ void printRates(struct partial_box box, const String &rateGtt_str, String rateML
     display.print(MLH_STRING);
   }
   while (display.nextPage());
+
+  // ESP_LOGD("TEST", "took %d ms\n", millis() - previous);
 }
 
 /**

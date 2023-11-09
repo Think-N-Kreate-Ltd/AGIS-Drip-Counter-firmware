@@ -42,6 +42,7 @@ void dropDetectedLEDTask(void *);
 void refreshDisplayTask(void *);
 void powerOffTask(void *);
 void monitorBatteryTask(void *);
+void monitorBatteryChargeStatusTask(void * arg);
 void IRAM_ATTR powerOffISR();
 void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
@@ -126,6 +127,14 @@ void setup() {
   /*Create a task for monitoring battery level*/
   xTaskCreate(monitorBatteryTask,
               "Monitor Battery Task",
+              4096,
+              NULL,
+              0,
+              NULL);
+
+  /*Create a task for monitoring battery charge status*/
+  xTaskCreate(monitorBatteryChargeStatusTask,
+              "Monitor Battery Charge Status Task",
               4096,
               NULL,
               0,
@@ -279,7 +288,7 @@ void dropDetectedLEDTask(void * arg) {
 void refreshDisplayTask(void * arg) {
   for(;;) {
     xSemaphoreTake(displayMutex, portMAX_DELAY);
-    // TODO: only refresh display if rate has changed from current one
+    // TODO: only refresh display if new drop detected and rate is different
     static char rateGtt_buf[10];
     static char rateMLh_buf[10];
     sprintf(rateGtt_buf, "%d", dripRate);
@@ -342,23 +351,43 @@ void monitorBatteryTask(void * arg) {
     xSemaphoreTake(displayMutex, portMAX_DELAY);
     if (batteryVoltage < BATTERY_LOW_THRESHOLD_VOLTAGE) {
       displayPopup(BATTERY_LOW_STRING);
+      vTaskDelay(POPUP_WINDOW_HOLD_TIME);
     }
-    vTaskDelay(POPUP_WINDOW_HOLD_TIME);
     // TODO: mutex will not be released until vTaskDelay() finishes.
     // If user hits the power off button during this delay time, the
     // display will not turn off immediately. How to improve this?
     xSemaphoreGive(displayMutex);
 
+    // free the CPU
+    vTaskDelay(BATTERY_MONITOR_TIME);
+  }
+}
+
+/**
+ * Monitor battery charge status and update battery symbol accordingly
+ * @param none
+ * @return none
+ */
+void monitorBatteryChargeStatusTask(void * arg) {
+  for(;;) {
     /*Get battery charging status*/
+    static charge_status_t previousChargeStatus = charge_status_t::UNKNOWN;  // initial value to have smth to compare
     charge_status_t chargeStatus = getChargeStatus();
 
     /*Refresh battery symbol based on battery voltage and charge status*/
-    xSemaphoreTake(displayMutex, portMAX_DELAY);
-    drawBatteryBitmap(batteryVoltage, chargeStatus);
-    xSemaphoreGive(displayMutex);
+    // Only redraw if charge status has changed
+    if (chargeStatus != previousChargeStatus) {
+      /*Get battery voltage to estimate remaining percentage*/
+      float batteryVoltage = getBatteryVoltage();
+
+      xSemaphoreTake(displayMutex, portMAX_DELAY);
+      drawBatteryBitmap(batteryVoltage, chargeStatus);
+      xSemaphoreGive(displayMutex);
+    }
+    previousChargeStatus = chargeStatus;
 
     // free the CPU
-    vTaskDelay(BATTERY_MONITOR_TIME);
+    vTaskDelay(BATTERY_CHARGE_STATUS_TIME);
   }
 }
 

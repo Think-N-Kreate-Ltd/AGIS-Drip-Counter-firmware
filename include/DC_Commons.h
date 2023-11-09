@@ -35,12 +35,13 @@
 #define DC_I2C_FREQ         1000000 // 100khz
 
 /*Constant definitions*/
-#define DROP_DEBOUNCE_TIME     10     // if two pulses are generated within debounce time, it must be detected as 1 drop
-#define DISPLAY_REFRESH_TIME   100    // time between display refresh (Spec: 0.3s partial refresh)
-#define BATTERY_MONITOR_TIME   5000   // time between battery monitor, 5s
-#define POPUP_WINDOW_HOLD_TIME 2000   // time duration of each pop-up window, 2s
-#define NO_DROP_ALARM_TIME     20000  // alarm will be triggered if excedeeding this time
-#define NO_DROP_AUTO_OFF_TIME  60000  // device will auto-off if excedeeding this time
+#define DROP_DEBOUNCE_TIME         10     // if two pulses are generated within debounce time, it must be detected as 1 drop
+#define DISPLAY_REFRESH_TIME       100    // time between display refresh (Spec: 0.3s partial refresh)
+#define BATTERY_MONITOR_TIME       60000  // time between battery monitor
+#define BATTERY_CHARGE_STATUS_TIME 1000   // time between battery charge status check
+#define POPUP_WINDOW_HOLD_TIME     2000   // time duration of each pop-up window, 2s
+#define NO_DROP_ALARM_TIME         20000  // alarm will be triggered if excedeeding this time
+#define NO_DROP_AUTO_OFF_TIME      60000  // device will auto-off if excedeeding this time
 
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";

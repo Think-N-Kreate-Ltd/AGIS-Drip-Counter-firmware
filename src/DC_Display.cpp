@@ -38,28 +38,35 @@ void displayInit() {
  * @param none
  * @return none
  */
-void printRates(struct partial_box box, String rateGtt_str, String rateMLh_str, fonts f) {
+void printRates(struct partial_box box, const String &rateGtt_str, String rateMLh_str, fonts f) {
   display.setPartialWindow(box.left, box.top, box.width, box.height);
   display.setTextColor(GxEPD_BLACK);
 
   int16_t tbx, tby;
   uint16_t tbw, tbh;
 
+  display.setFont(f.font);
   display.getTextBounds(rateGtt_str, box.left, box.top, &tbx, &tby, &tbw, &tbh);
-  uint16_t gtt_x = (box.left + box.width/2 - tbw - 1);
+  uint16_t gtt_x = ((display.width() - tbw) / 2) - tbx;
   uint16_t gtt_y = box.top + 30;
 
+  display.setFont(&FreeSansBold9pt7b);
   display.getTextBounds(GTT_STRING, box.left, box.top, &tbx, &tby, &tbw, &tbh);
   uint16_t gttString_x = ((display.width() - tbw) / 2) - tbx;
   uint16_t gttString_y = gtt_y + 20;
 
+  display.setFont(f.font);
   display.getTextBounds(rateMLh_str, box.left, box.top, &tbx, &tby, &tbw, &tbh);
-  uint16_t mlh_x = (box.left + box.width/2 - tbw - 1);
+  uint16_t mlh_x = ((display.width() - tbw) / 2) - tbx;
   uint16_t mlh_y = gttString_y + 40;
 
+  display.setFont(&FreeSansBold9pt7b);
   display.getTextBounds(MLH_STRING, box.left, box.top, &tbx, &tby, &tbw, &tbh);
   uint16_t mlhString_x = ((display.width() - tbw) / 2) - tbx;
   uint16_t mlhString_y = mlh_y + 20;
+
+  // TODO: why partial update below takes so long (> 1000 ms)?
+  // int previous = millis();
 
   display.firstPage();
   do{
@@ -86,6 +93,8 @@ void printRates(struct partial_box box, String rateGtt_str, String rateMLh_str, 
     display.print(MLH_STRING);
   }
   while (display.nextPage());
+
+  // ESP_LOGD("TEST", "took %d ms\n", millis() - previous);
 }
 
 /**

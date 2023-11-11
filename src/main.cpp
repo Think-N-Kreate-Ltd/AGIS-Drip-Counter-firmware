@@ -55,6 +55,8 @@ void setup() {
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+  pinMode(DROP_SENSOR_VCC_EN_PIN, OUTPUT);
+  digitalWrite(DROP_SENSOR_VCC_EN_PIN, HIGH);
 
   // for battery monitoring
   pinMode(BATT_ADC_ENABLE_PIN, OUTPUT);

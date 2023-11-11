@@ -323,7 +323,7 @@ void powerOffTask(void * arg) {
       pinMode(LATCH_IO_PIN, OUTPUT);
       digitalWrite(LATCH_IO_PIN, LOW);
 
-      // It will take 3s to fully discharge the capacitor to power off.
+      // It will take 2s to fully discharge the capacitor to power off.
       // Block other tasks from controlling the display during this time.
       while (true) {
         vTaskDelay(100);

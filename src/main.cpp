@@ -55,6 +55,8 @@ void setup() {
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+  pinMode(DROP_SENSOR_VCC_EN_PIN, OUTPUT);
+  digitalWrite(DROP_SENSOR_VCC_EN_PIN, HIGH);
 
   // for battery monitoring
   pinMode(BATT_ADC_ENABLE_PIN, OUTPUT);
@@ -321,7 +323,7 @@ void powerOffTask(void * arg) {
       pinMode(LATCH_IO_PIN, OUTPUT);
       digitalWrite(LATCH_IO_PIN, LOW);
 
-      // It will take 3s to fully discharge the capacitor to power off.
+      // It will take 2s to fully discharge the capacitor to power off.
       // Block other tasks from controlling the display during this time.
       while (true) {
         vTaskDelay(100);

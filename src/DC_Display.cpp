@@ -103,7 +103,7 @@ void printRates(struct partial_box box, const String &rateGtt_str, String rateML
  * @return none
  */
 void startScreen() {
-  display.setRotation(2);
+  display.setRotation(0);
   display.setFont(&FreeMonoBold9pt7b);
   display.setTextColor(GxEPD_BLACK);
   int16_t tbx, tby;
@@ -140,7 +140,7 @@ void startScreen() {
 void powerOffScreen() {
   display.clearScreen(); // without this, the display will not be clear in very rare cases
 
-  display.setRotation(2);
+  display.setRotation(0);
   display.setFont(&FreeMonoBold9pt7b);
   display.setTextColor(GxEPD_BLACK);
   int16_t tbx, tby;
@@ -212,7 +212,7 @@ void drawBatteryBitmap(float voltage, charge_status_t status) {
 /// @brief Display a pop-up window (regtanle shape with boundary) to show some important message
 /// @param message Message to be shown within the pop-up window. The message length should be very short!
 void displayPopup(const char * message) {
-  display.setRotation(2);
+  display.setRotation(0);
   display.setFont(&FreeMonoBold9pt7b);
   display.setTextColor(GxEPD_BLACK);
 

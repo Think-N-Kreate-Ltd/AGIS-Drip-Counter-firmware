@@ -240,3 +240,8 @@ void displayPopup(const char * message) {
     display.print(message);
   } while (display.nextPage());
 }
+
+/// @brief Drop Factor selection screen: 4 selectable drop factors
+void selectDropFactorScreen() {
+
+}

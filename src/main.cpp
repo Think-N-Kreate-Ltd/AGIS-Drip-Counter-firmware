@@ -29,6 +29,8 @@ volatile bool turnOnLed = false;          // used to turn on the LED for a short
 volatile bool enablePowerOff = false;
 volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
+ezButton userButton(USER_BUTTON_PIN);     // to select Drop Factor and enable other functions in the future
+uint8_t userButtonCount = 0;
 
 /*Variables related to I2C*/
 
@@ -43,12 +45,14 @@ void refreshDisplayTask(void *);
 void powerOffTask(void *);
 void monitorBatteryTask(void *);
 void monitorBatteryChargeStatusTask(void * arg);
-void IRAM_ATTR powerOffISR();
+void IRAM_ATTR buttonsPressedISR();
 void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
 
 void setup() {
   Serial.begin(115200);
+  userButton.setDebounceTime(50);
+  userButton.setCountMode(COUNT_FALLING);
 
   /*GPIO setup*/
   // for drop sensor
@@ -66,6 +70,14 @@ void setup() {
   pinMode(BATT_CHGb_PIN, INPUT);
   pinMode(BATT_STDBYb_PIN, INPUT);
 
+  /*Initialize Epaper display and show welcome screen*/
+  displayInit();
+  startScreen();
+
+  /*Prompt user to select drop factor*/
+  // Block execution until drop factor is selected
+
+
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
 
@@ -81,7 +93,7 @@ void setup() {
 
   /*Setup for timer1*/
   Timer1_cfg = timerBegin(1, 80, true);
-  timerAttachInterrupt(Timer1_cfg, &powerOffISR,
+  timerAttachInterrupt(Timer1_cfg, &buttonsPressedISR,
                        false);
   timerAlarmWrite(Timer1_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
   timerAlarmEnable(Timer1_cfg);
@@ -89,10 +101,6 @@ void setup() {
   /*Initialize mutex*/
   displayMutex = xSemaphoreCreateMutex();
   assert(displayMutex);
-
-  /*Initialize Epaper display and show welcome screen*/
-  displayInit();
-  startScreen();
 
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,
@@ -394,11 +402,13 @@ void monitorBatteryChargeStatusTask(void * arg) {
 }
 
 /**
+ * Check whether power button or user button is pressed.
  * Properly shut down the application when power button is pressed and hold
  * @param none
  * @return none
  */
-void IRAM_ATTR powerOffISR() {
+void IRAM_ATTR buttonsPressedISR() {
+  /*Check powerButton state*/
   powerButton.loop();
   if(!powerButton.getState() && !enablePowerOff) {
     powerButtonHoldCount++;
@@ -408,6 +418,50 @@ void IRAM_ATTR powerOffISR() {
     // signal task to power off
     enablePowerOff = true;
     powerButtonHoldCount = 0;
+  }
+
+  /*Check userButton state*/
+  static uint8_t userButtonState = 0;  // 0: not pressed, 1: ...
+  static unsigned int lastPressedTime;
+  userButton.loop();
+
+  if (userButtonState == 0) {
+    if (userButton.isPressed()) {
+      // 1st press
+      userButtonState = 1;
+
+      // record this as latest button pressed
+      lastPressedTime = millis();
+    }
+  }
+  else if (userButtonState == 1) {
+    // wait for stable release
+    if (userButton.isReleased()) {
+      userButtonState = 2;
+      lastPressedTime = millis();
+    }
+  }
+  else if (userButtonState == 2) {
+    // differentiate between single and double press
+    if (millis() - lastPressedTime > 400) {
+      // single press
+      userButtonCount += 1;
+      userButtonState = 0;
+      lastPressedTime = millis();
+    }
+    else if (userButton.isPressed()) {
+      // double press
+      userButtonCount += 2;
+      userButtonState = 3;
+      lastPressedTime = millis();
+    }
+  }
+  else if (userButtonState == 3) {
+    // wait for stable release 2
+    if (userButton.isReleased()) {
+      userButtonState = 0;
+      lastPressedTime = millis();
+    }
   }
 }
 

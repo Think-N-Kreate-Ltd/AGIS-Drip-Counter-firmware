@@ -17,7 +17,7 @@ volatile unsigned int timeBtw2Drops = UINT_MAX; // i.e. no more drop recently
 volatile bool firstDropDetected = false;  // to check when we receive the 1st drop
 
 /*Variables related to infusion*/
-unsigned int dropFactor = 20;             // default value
+unsigned int dropFactor = 0;             // unset value, required user selection
 volatile unsigned int infusedVolume_x100 = 0;  // 100 times larger than actual value, unit: mL
 bool dropFactorConfirmed = false;         // TRUE when drop factor is selected
 
@@ -32,11 +32,18 @@ volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 ezButton userButton(USER_BUTTON_PIN);     // to select Drop Factor and enable other functions in the future
 button_state_t userButtonState = button_state_t::IDLE;
+unsigned long deviceLastActiveTime;       // used for auto-off function
 
 /*Variables related to I2C*/
 
 /*Mutex to keep different tasks from controlling the display at the same time*/
 SemaphoreHandle_t  displayMutex;
+
+/*Task handles*/
+TaskHandle_t refreshDisplayTaskHandle;
+TaskHandle_t processI2CCommandsTaskHandle;
+TaskHandle_t dropDetectedLEDTaskHandle;
+TaskHandle_t monitorBatteryChargeStatusTaskHandle;
 
 /*Function prototypes*/
 void IRAM_ATTR dropSensorISR();
@@ -60,9 +67,9 @@ void setup() {
   // for drop sensor
   pinMode(DROP_SENSOR_PIN, INPUT);
   pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
-  digitalWrite(DROP_SENSOR_LED_PIN, HIGH); // prevent it initially turn on
+  digitalWrite(DROP_SENSOR_LED_PIN, HIGH);    // initially OFF
   pinMode(DROP_SENSOR_VCC_EN_PIN, OUTPUT);
-  digitalWrite(DROP_SENSOR_VCC_EN_PIN, HIGH);
+  digitalWrite(DROP_SENSOR_VCC_EN_PIN, LOW);  // initially OFF
 
   // for battery monitoring
   pinMode(BATT_ADC_ENABLE_PIN, OUTPUT);
@@ -79,15 +86,12 @@ void setup() {
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
 
-  /*Setup for sensor interrupt*/
-  attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
-
   /*Setup for timer0*/
   Timer0_cfg = timerBegin(0, 80, true);
   timerAttachInterrupt(Timer0_cfg, &dripCountUpdateISR,
                        false);
   timerAlarmWrite(Timer0_cfg, 1000, true); // time = 80*1000/80,000,000 = 1ms
-  timerAlarmEnable(Timer0_cfg);
+  timerAlarmDisable(Timer0_cfg);  // initially disable interrupt
 
   /*Setup for timer1*/
   Timer1_cfg = timerBegin(1, 80, true);
@@ -122,7 +126,8 @@ void setup() {
               4096,
               NULL,
               configMAX_PRIORITIES-3,      // this should be a very high priority task
-              NULL);
+              &processI2CCommandsTaskHandle);
+  vTaskSuspend(processI2CCommandsTaskHandle);
 
   /*Create a task for refreshing Epaper display*/
   xTaskCreate(refreshDisplayTask,
@@ -130,7 +135,8 @@ void setup() {
               4096,
               NULL,
               1,
-              NULL);
+              &refreshDisplayTaskHandle);
+  vTaskSuspend(refreshDisplayTaskHandle);
 
   /*Create a task for toggling LED everytime a drop is detected*/
   xTaskCreate(dropDetectedLEDTask,
@@ -138,7 +144,8 @@ void setup() {
               4096,
               NULL,
               0,
-              NULL);
+              &dropDetectedLEDTaskHandle);
+  vTaskSuspend(dropDetectedLEDTaskHandle);
 
   /*Create a task for monitoring battery level*/
   xTaskCreate(monitorBatteryTask,
@@ -154,7 +161,11 @@ void setup() {
               4096,
               NULL,
               0,
-              NULL);
+              &monitorBatteryChargeStatusTaskHandle);
+  vTaskSuspend(monitorBatteryChargeStatusTaskHandle);
+
+  // Record this as device last active time
+  deviceLastActiveTime = millis();
 }
 
 
@@ -259,12 +270,9 @@ void IRAM_ATTR dripCountUpdateISR() {
     // TODO: User button can be used to start monitoring infusion.
     // When user button is pressed, auto-off function will be disabled. 
     // E.g. when there is an alarm, it should remain alarm and not auto-off.
-    if (timeWithNoDrop >= NO_DROP_AUTO_OFF_TIME) {
-      enablePowerOff = true;
-    }
-
   } else {
     timeWithNoDrop = 0;
+    deviceLastActiveTime = millis();
   }
 
   // get latest value of dripRate
@@ -320,13 +328,14 @@ void refreshDisplayTask(void * arg) {
 
 /**
  * Task to display the power off screen, clean up, and then power off
+ * Also check device last active time to auto-off
  * @param none
  * @return none
  */
 void powerOffTask(void * arg) {
   for(;;) {
-    xSemaphoreTake(displayMutex, portMAX_DELAY);
-    if(enablePowerOff) {
+    if(enablePowerOff || (millis() - deviceLastActiveTime > AUTO_OFF_TIME)) {
+      xSemaphoreTake(displayMutex, portMAX_DELAY);
       ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
 
@@ -342,10 +351,10 @@ void powerOffTask(void * arg) {
       while (true) {
         vTaskDelay(100);
       }
-    }
 
-    // The program should never reach here, since it is already powered off.
-    xSemaphoreGive(displayMutex);
+      // The program should never reach here, since it is already powered off.
+      xSemaphoreGive(displayMutex);
+    }
 
     // free the CPU
     vTaskDelay(10);
@@ -366,6 +375,7 @@ void monitorBatteryTask(void * arg) {
     /*Battery low check*/
     xSemaphoreTake(displayMutex, portMAX_DELAY);
     if (batteryVoltage < BATTERY_LOW_THRESHOLD_VOLTAGE) {
+      // TODO: popup won't happen during drop factor selection
       displayPopup(BATTERY_LOW_STRING);
       vTaskDelay(POPUP_WINDOW_HOLD_TIME);
     }
@@ -506,7 +516,7 @@ void dropFactorSelectionTask(void * arg) {
     // Block other display tasks from taking the display
     while (!dropFactorConfirmed) {
       // Exception: the powerOffTask can take the display since it is the highest priority
-      if(enablePowerOff) {
+      if(enablePowerOff || (millis() - deviceLastActiveTime > AUTO_OFF_TIME)) {
         xSemaphoreGive(displayMutex);
         vTaskSuspend(NULL);
       }
@@ -521,13 +531,29 @@ void dropFactorSelectionTask(void * arg) {
         activeDropFactor = dropFactorArray[index];
         dropFactorSelectionScreen(activeDropFactor);
         userButtonState = button_state_t::IDLE;
+        deviceLastActiveTime = millis();
       }
       else if (userButtonState == button_state_t::DOUBLE_PRESS) {
         // drop factor is confirmed
         dropFactor = activeDropFactor;
-        // TODO: more inititalizations here
+
+        /*Now we can enable some peripherals and initialization*/
+        // Enable power for sensor
+        digitalWrite(DROP_SENSOR_VCC_EN_PIN, HIGH);
+        // Setup for sensor interrupt
+        attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
+        // Enable timer interrupt
+        timerAlarmEnable(Timer0_cfg);
+
+        // Enable other tasks that were initially suspended
+        vTaskResume(refreshDisplayTaskHandle);
+        vTaskResume(processI2CCommandsTaskHandle);
+        vTaskResume(dropDetectedLEDTaskHandle);
+        vTaskResume(monitorBatteryChargeStatusTaskHandle);
+
         dropFactorConfirmed = true;
         userButtonState = button_state_t::IDLE;
+        deviceLastActiveTime = millis();
       }
       else if (userButtonState == button_state_t::IDLE) {
         // waiting for user to confirm drop factor

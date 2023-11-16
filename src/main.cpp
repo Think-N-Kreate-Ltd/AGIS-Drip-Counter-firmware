@@ -19,6 +19,7 @@ volatile bool firstDropDetected = false;  // to check when we receive the 1st dr
 /*Variables related to infusion*/
 unsigned int dropFactor = 20;             // default value
 volatile unsigned int infusedVolume_x100 = 0;  // 100 times larger than actual value, unit: mL
+bool dropFactorConfirmed = false;         // TRUE when drop factor is selected
 
 /*Timer pointers*/
 hw_timer_t *Timer0_cfg = NULL; // create a pointer for timer0
@@ -30,7 +31,7 @@ volatile bool enablePowerOff = false;
 volatile unsigned long powerButtonHoldCount = 0;
 ezButton powerButton(LATCH_IO_PIN);
 ezButton userButton(USER_BUTTON_PIN);     // to select Drop Factor and enable other functions in the future
-uint8_t userButtonCount = 0;
+button_state_t userButtonState = button_state_t::IDLE;
 
 /*Variables related to I2C*/
 
@@ -48,6 +49,7 @@ void monitorBatteryChargeStatusTask(void * arg);
 void IRAM_ATTR buttonsPressedISR();
 void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
+void dropFactorSelectionTask(void * arg);
 
 void setup() {
   Serial.begin(115200);
@@ -74,10 +76,6 @@ void setup() {
   displayInit();
   startScreen();
 
-  /*Prompt user to select drop factor*/
-  // Block execution until drop factor is selected
-
-
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
 
@@ -102,12 +100,28 @@ void setup() {
   displayMutex = xSemaphoreCreateMutex();
   assert(displayMutex);
 
-  /*Create a task for toggling LED everytime a drop is detected*/
-  xTaskCreate(dropDetectedLEDTask,
-              "Drop Detected LED Task",
+  /*Create a task for software power off*/
+  xTaskCreate(powerOffTask,
+              "Power Off Task",
               4096,
               NULL,
-              0,
+              configMAX_PRIORITIES-1,      // HIGHEST PRIORITY, to make sure this task can preempt other tasks to shut down
+              NULL);
+
+  /*Create a task for drop factor selection*/
+  xTaskCreate(dropFactorSelectionTask,
+              "Drop Factor Selection Task",
+              4096,
+              NULL,
+              configMAX_PRIORITIES-2,      // only lower priority than powerOffTask, this needs to complete once before other tasks can run
+              NULL);
+
+  /*Create a task for processing I2C commands*/
+  xTaskCreate(processI2CCommandsTask,
+              "Process I2C Commands Task",
+              4096,
+              NULL,
+              configMAX_PRIORITIES-3,      // this should be a very high priority task
               NULL);
 
   /*Create a task for refreshing Epaper display*/
@@ -118,20 +132,12 @@ void setup() {
               1,
               NULL);
 
-  /*Create a task for software power off*/
-  xTaskCreate(powerOffTask,
-              "Power Off Task",
+  /*Create a task for toggling LED everytime a drop is detected*/
+  xTaskCreate(dropDetectedLEDTask,
+              "Drop Detected LED Task",
               4096,
               NULL,
-              2,      // higher priority than other display tasks
-              NULL);
-
-  /*Create a task for processing I2C commands*/
-  xTaskCreate(processI2CCommandsTask,
-              "Process I2C Commands Task",
-              4096,
-              NULL,
-              configMAX_PRIORITIES-1,      // this should be a very high priority task
+              0,
               NULL);
 
   /*Create a task for monitoring battery level*/
@@ -421,45 +427,47 @@ void IRAM_ATTR buttonsPressedISR() {
   }
 
   /*Check userButton state*/
-  static uint8_t userButtonState = 0;  // 0: not pressed, 1: ...
+  // 0: wating for 1st press
+  // 1: waiting for 1st release
+  // 2: 1st released, checking single or double press
+  // 3: waiting for 2nd release
+  static uint8_t buttonState = 0;
   static unsigned int lastPressedTime;
   userButton.loop();
 
-  if (userButtonState == 0) {
+  if (buttonState == 0) {
     if (userButton.isPressed()) {
       // 1st press
-      userButtonState = 1;
-
-      // record this as latest button pressed
+      buttonState = 1;
       lastPressedTime = millis();
     }
   }
-  else if (userButtonState == 1) {
+  else if (buttonState == 1) {
     // wait for stable release
     if (userButton.isReleased()) {
-      userButtonState = 2;
+      buttonState = 2;
       lastPressedTime = millis();
     }
   }
-  else if (userButtonState == 2) {
+  else if (buttonState == 2) {
     // differentiate between single and double press
-    if (millis() - lastPressedTime > 400) {
+    if (millis() - lastPressedTime > DOUBLE_PRESS_TIMEOUT) {
       // single press
-      userButtonCount += 1;
-      userButtonState = 0;
+      userButtonState = button_state_t::SINGLE_PRESS;
+      buttonState = 0;
       lastPressedTime = millis();
     }
     else if (userButton.isPressed()) {
       // double press
-      userButtonCount += 2;
-      userButtonState = 3;
+      userButtonState = button_state_t::DOUBLE_PRESS;
+      buttonState = 3;
       lastPressedTime = millis();
     }
   }
-  else if (userButtonState == 3) {
+  else if (buttonState == 3) {
     // wait for stable release 2
     if (userButton.isReleased()) {
-      userButtonState = 0;
+      buttonState = 0;
       lastPressedTime = millis();
     }
   }
@@ -477,6 +485,60 @@ void processI2CCommandsTask(void * arg) {
       I2CDevice.process(pendingCommand, pendingCommandLength);
       pendingCommandLength = 0;    // process once
     }
+
+    // free the CPU
+    vTaskDelay(10);
+  }
+}
+
+/**
+ * Process User Button press to change Drop Factor and confirm
+ * @param none
+ * @return none
+ */
+void dropFactorSelectionTask(void * arg) {
+  for(;;) {
+    xSemaphoreTake(displayMutex, portMAX_DELAY);
+    static uint8_t index = 2;        // correspond to initial drop factor to be displayed: 20 gtt/mL
+    static uint8_t activeDropFactor = dropFactorArray[index];   // used to display, not yet confirmed
+    dropFactorSelectionScreen(activeDropFactor);
+
+    // Block other display tasks from taking the display
+    while (!dropFactorConfirmed) {
+      // Exception: the powerOffTask can take the display since it is the highest priority
+      if(enablePowerOff) {
+        xSemaphoreGive(displayMutex);
+        vTaskSuspend(NULL);
+      }
+
+      // Check user button press to determine the confirmed drop factor:
+      if (userButtonState == button_state_t::SINGLE_PRESS) {
+        // change to the next drop factor
+        index++;
+        if (index == sizeof(dropFactorArray) / sizeof(dropFactorArray[0])) {
+          index = 0;
+        }
+        activeDropFactor = dropFactorArray[index];
+        dropFactorSelectionScreen(activeDropFactor);
+        userButtonState = button_state_t::IDLE;
+      }
+      else if (userButtonState == button_state_t::DOUBLE_PRESS) {
+        // drop factor is confirmed
+        dropFactor = activeDropFactor;
+        // TODO: more inititalizations here
+        dropFactorConfirmed = true;
+        userButtonState = button_state_t::IDLE;
+      }
+      else if (userButtonState == button_state_t::IDLE) {
+        // waiting for user to confirm drop factor
+        // do nothing in here
+      }
+
+      vTaskDelay(10);
+    }
+    
+    xSemaphoreGive(displayMutex);
+    vTaskSuspend(NULL);
 
     // free the CPU
     vTaskDelay(10);

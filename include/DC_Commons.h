@@ -46,12 +46,22 @@
 #define POPUP_WINDOW_HOLD_TIME     2000   // time duration of each pop-up window, 2s
 #define NO_DROP_ALARM_TIME         20000  // alarm will be triggered if excedeeding this time
 #define NO_DROP_AUTO_OFF_TIME      60000  // device will auto-off if excedeeding this time
+#define DOUBLE_PRESS_TIMEOUT       400    // 2 consecutive button press within this time is considered a double press
 
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";
+const char DROP_FACTOR_UNIT_STRING[] = "gtt/mL";
 const char START_SCREEN_STRING[] = " Drip\nCounter";
 const char POWER_OFF_SCREEN_STRING[] = "Shut\ndown...";
 const char BATTERY_LOW_STRING[] = "WARNING\n\nBattery \n  Low";
+const char DROP_FACTOR_SELECTION_STRING[] = " Drop\nfactor:";
+const uint8_t dropFactorArray[] = {10, 15, 20, 60};
+
+enum button_state_t{
+    IDLE,            // not pressed
+    SINGLE_PRESS,
+    DOUBLE_PRESS,
+};
 
 /*Externally declared variables*/
 extern volatile unsigned int dripRate;

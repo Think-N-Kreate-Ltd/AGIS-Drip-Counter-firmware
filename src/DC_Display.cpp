@@ -242,6 +242,62 @@ void displayPopup(const char * message) {
 }
 
 /// @brief Drop Factor selection screen: 4 selectable drop factors
-void selectDropFactorScreen() {
+void dropFactorSelectionScreen(uint8_t activeDropFactor) {
+  display.setRotation(0);
+  display.setTextColor(GxEPD_BLACK);
 
+  int16_t tbx, tby;
+  uint16_t tbw, tbh;
+
+  display.setFont(&FreeMonoBold9pt7b);
+  display.getTextBounds(DROP_FACTOR_SELECTION_STRING, 0, 0, &tbx, &tby, &tbw, &tbh);
+  // center bounding box by transposition of origin:
+  uint16_t x = ((display.width() - tbw) / 2) - tbx;
+  uint16_t y = STATUS_BAR_HEIGHT + 1 + tbh / 2;
+
+  display.setFont(&FreeSansBold18pt7b);
+  static char activeDropFactor_buf[3];
+  sprintf(activeDropFactor_buf, "%d", activeDropFactor);
+  display.getTextBounds(activeDropFactor_buf, 0, 0, &tbx, &tby, &tbw, &tbh);
+  uint16_t dropFactor_x = ((display.width() - tbw) / 2) - tbx;
+  uint16_t dropFactor_y = y + 60;
+  uint16_t dropFactor_tbh = tbh;
+
+  display.getTextBounds(DROP_FACTOR_UNIT_STRING, 0, 0, &tbx, &tby, &tbw, &tbh);
+  uint16_t dropFactorUnitString_x = ((display.width() - tbw) / 2) - tbx - 5;  // "- 5" to better align, don't know why
+  uint16_t dropFactorUnitString_y = dropFactor_y + 30;
+
+  display.setPartialWindow(0, STATUS_BAR_HEIGHT + 1, display.width(), display.height() - (STATUS_BAR_HEIGHT + 1));
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    // information texts
+    display.setFont(&FreeMonoBold9pt7b);
+    display.setCursor(x, y);
+    display.print(DROP_FACTOR_SELECTION_STRING);
+
+    display.setCursor(dropFactorUnitString_x, dropFactorUnitString_y);
+    display.print(DROP_FACTOR_UNIT_STRING);
+
+    // draw triangles to illustrate that the number can be changed
+    uint8_t triangle_size = 8;
+    uint8_t triangle_margin = 3;
+    uint16_t triangle_left_x0 = triangle_margin;
+    uint16_t triangle_left_y0 = dropFactor_y - (dropFactor_tbh / 2);
+    display.fillTriangle(triangle_left_x0, triangle_left_y0,
+                         triangle_left_x0 + triangle_size, triangle_left_y0 - triangle_size,
+                         triangle_left_x0 + triangle_size, triangle_left_y0 + triangle_size,
+                         GxEPD_BLACK);
+    uint16_t triangle_right_x0 = display.width() - triangle_margin;
+    uint16_t triangle_right_y0 = triangle_left_y0;
+    display.fillTriangle(triangle_right_x0, triangle_right_y0,
+                         triangle_right_x0 - triangle_size, triangle_right_y0 - triangle_size,
+                         triangle_right_x0 - triangle_size, triangle_right_y0 + triangle_size,
+                         GxEPD_BLACK);
+
+    // drop factor number
+    display.setFont(&FreeSansBold18pt7b);
+    display.setCursor(dropFactor_x, dropFactor_y);
+    display.print(activeDropFactor_buf);
+  } while (display.nextPage());
 }

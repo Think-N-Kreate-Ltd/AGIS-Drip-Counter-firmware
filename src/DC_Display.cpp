@@ -7,6 +7,8 @@
 #define STATUS_BAR_HEIGHT                   10
 #define BATTERY_SYMBOL_WIDTH                16
 
+static const char* DISPLAY_TAG = "DISPLAY";
+
 // enum battery_symbol_t {
 //   BATTERY_100_PERCENT,
 //   BATTERY_75_PERCENT,
@@ -207,6 +209,8 @@ void drawBatteryBitmap(float voltage, charge_status_t status) {
     display.drawInvertedBitmap(x, y, bitmap, BATTERY_SYMBOL_WIDTH,
                                STATUS_BAR_HEIGHT, GxEPD_BLACK);
   } while (display.nextPage());
+
+  ESP_LOGD(DISPLAY_TAG, "Battery symbol redrawn");
 }
 
 /// @brief Display a pop-up window (regtanle shape with boundary) to show some important message

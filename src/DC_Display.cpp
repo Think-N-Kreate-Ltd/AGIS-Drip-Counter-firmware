@@ -3,9 +3,11 @@
 // select the display class and display driver class in the following file (new style):
 #include "GxEPD2_display_selection_new_style.h"
 #include <bitmaps/Battery_Bitmaps_16x10.h>
+#include <bitmaps/Drop_Factor_Bitmaps_25x10.h>
 
 #define STATUS_BAR_HEIGHT                   10
 #define BATTERY_SYMBOL_WIDTH                16
+#define DROP_FACTOR_SYMBOL_WIDTH            25
 
 static const char* DISPLAY_TAG = "DISPLAY";
 
@@ -210,7 +212,43 @@ void drawBatteryBitmap(float voltage, charge_status_t status) {
                                STATUS_BAR_HEIGHT, GxEPD_BLACK);
   } while (display.nextPage());
 
-  ESP_LOGD(DISPLAY_TAG, "Battery symbol redrawn");
+  ESP_LOGD(DISPLAY_TAG, "Battery symbol drawn");
+}
+
+void drawDropFactorBitmap(uint8_t dropFactor) {
+  /*Select corresponding bitmap*/
+  uint8_t *bitmap;
+
+  if (dropFactor == 10) {
+      bitmap = (uint8_t*)dropFactorBitmap_10_25x10;
+  }
+  else if (dropFactor == 15) {
+      bitmap = (uint8_t*)dropFactorBitmap_15_25x10;
+  }
+  else if (dropFactor == 20) {
+      bitmap = (uint8_t*)dropFactorBitmap_20_25x10;
+  }
+  else if (dropFactor == 60) {
+      bitmap = (uint8_t*)dropFactorBitmap_60_25x10;
+  }
+  else {
+    // should never reach here
+    ESP_LOGD(DISPLAY_TAG, "Drop Factor symbol doesn't exist");
+  }
+
+  /*Display the selected bitmap*/
+  uint8_t x = 1;
+  uint8_t y = 1;
+  display.setPartialWindow(x, y, DROP_FACTOR_SYMBOL_WIDTH, STATUS_BAR_HEIGHT);
+
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.drawInvertedBitmap(x, y, bitmap, DROP_FACTOR_SYMBOL_WIDTH,
+                               STATUS_BAR_HEIGHT, GxEPD_BLACK);
+  } while (display.nextPage());
+
+  ESP_LOGD(DISPLAY_TAG, "Drop Factor symbol drawn");
 }
 
 /// @brief Display a pop-up window (regtanle shape with boundary) to show some important message

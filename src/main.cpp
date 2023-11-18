@@ -398,6 +398,7 @@ void monitorBatteryTask(void * arg) {
  * @param none
  * @return none
  */
+// TODO: maybe it's better to trigger this based on interrupt?
 void monitorBatteryChargeStatusTask(void * arg) {
   for(;;) {
     /*Get battery charging status*/
@@ -542,6 +543,9 @@ void dropFactorSelectionTask(void * arg) {
 
       // drop factor is confirmed
       dropFactor = activeDropFactor;
+
+      // draw the corresponding drop factor symbol on status bar
+      drawDropFactorBitmap(dropFactor);
 
       /*Now we can enable some peripherals and initialization*/
       // Enable power for sensor

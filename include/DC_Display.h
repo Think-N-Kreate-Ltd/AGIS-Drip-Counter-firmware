@@ -42,6 +42,8 @@ void startScreen();
 void printRates(struct partial_box box, const String &rateGtt_str, String rateMLh_str, fonts f);
 void powerOffScreen();
 void drawBatteryBitmap(float voltage, charge_status_t status);
+void drawDropFactorBitmap(uint8_t dropFactor);
 void displayPopup(const char * message);
+void dropFactorSelectionScreen(uint8_t dropFactor);
 
 #endif /* B6F3EDF6_26E6_475A_8BCD_2F6D61486F3D */

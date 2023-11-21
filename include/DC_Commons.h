@@ -6,6 +6,9 @@
 // Comment to remove version from start screen
 #define SHOW_VERSION
 
+// Comment to enable device even during charging
+#define DEVICE_DISABLE_DURING_CHARGING
+
 /*GPIO definitions*/
 // Drop sensor
 #define DROP_SENSOR_PIN         6  // input pin for geting output from sensor

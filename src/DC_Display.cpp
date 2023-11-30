@@ -343,3 +343,29 @@ void dropFactorSelectionScreen(uint8_t activeDropFactor) {
     display.print(activeDropFactor_buf);
   } while (display.nextPage());
 }
+
+void testScreen() {
+  display.clearScreen(); // without this, the display will not be clear in very rare cases
+
+  display.setRotation(0);
+  display.setFont(&FreeMonoBold9pt7b);
+  display.setTextColor(GxEPD_BLACK);
+  int16_t tbx, tby;
+  uint16_t tbw, tbh;
+  display.getTextBounds("aha", 0, 0, &tbx, &tby, &tbw, &tbh);
+  // center bounding box by transposition of origin:
+  uint16_t x = ((display.width() - tbw) / 2) - tbx;
+  uint16_t y = ((display.height() - tbh) / 2) - tby;
+  display.setFullWindow();
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.setCursor(x, y);
+    display.print("aha");
+  } while (display.nextPage());
+
+  // Clear the screen to avoid overlap
+  display.clearScreen(0x00);  // all black
+  // May need to wait a bit to fully clear the display
+  // delay(500);
+}

@@ -448,6 +448,12 @@ void monitorBatteryChargeStatusTask(void * arg) {
         chargeStatus == charge_status_t::CHARGE_COMPLETED) {
       // Display charging information, then device goes to sleep to save power
       // TODO: display large symbol here
+
+      xSemaphoreTake(displayMutex, portMAX_DELAY);
+      // displayPopup("CHARGING");
+      // vTaskDelay(POPUP_WINDOW_HOLD_TIME);
+      xSemaphoreGive(displayMutex);
+
       sleepDueToCharging = true;
       ESP_LOGD(POWER_TAG, "Device is charging/completed. Sleep now zzz");
       esp_deep_sleep_start();

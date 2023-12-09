@@ -34,6 +34,7 @@ ezButton userButton(USER_BUTTON_PIN);     // to select Drop Factor and enable ot
 button_state_t userButtonState = button_state_t::IDLE;
 unsigned long deviceLastActiveTime;       // used for auto-off function
 RTC_DATA_ATTR bool sleepDueToCharging = false;
+RTC_DATA_ATTR charge_status_t previousChargeStatus = charge_status_t::UNKNOWN;  // initial value to have smth to compare
 
 /*Variables related to I2C*/
 
@@ -148,18 +149,6 @@ void setup() {
               NULL,
               configMAX_PRIORITIES-2,      // make sure this will run first to show the battery level
               NULL);
-
-  /*Create a task for drop factor selection*/
-  xTaskCreate(dropFactorSelectionTask,
-              "Drop Factor Selection Task",
-              4096,
-              NULL,
-              configMAX_PRIORITIES-3,      // lower priority than powerOffTask, this needs to complete once before other tasks can run
-              &dropFactorSelectionTaskHandle);
-
-#ifdef DEVICE_DISABLE_DURING_CHARGING
-  vTaskSuspend(dropFactorSelectionTaskHandle);
-#endif
 
   /*Create a task for processing I2C commands*/
   xTaskCreate(processI2CCommandsTask,
@@ -440,26 +429,36 @@ void monitorBatteryTask(void * arg) {
 void monitorBatteryChargeStatusTask(void * arg) {
   for(;;) {
     /*Get battery charging status*/
-    static charge_status_t previousChargeStatus = charge_status_t::UNKNOWN;  // initial value to have smth to compare
     charge_status_t chargeStatus = getChargeStatus();
 
 #ifdef DEVICE_DISABLE_DURING_CHARGING
     if (chargeStatus == charge_status_t::CHARGING ||
         chargeStatus == charge_status_t::CHARGE_COMPLETED) {
       // Display charging information, then device goes to sleep to save power
-      // TODO: display large symbol here
 
-      xSemaphoreTake(displayMutex, portMAX_DELAY);
-      // displayPopup("CHARGING");
-      // vTaskDelay(POPUP_WINDOW_HOLD_TIME);
-      xSemaphoreGive(displayMutex);
+      // Only redraw if previously not
+      if (chargeStatus != previousChargeStatus) {
+        xSemaphoreTake(displayMutex, portMAX_DELAY);
+        // TODO: display large symbol here
+        displayPopup("CHARGING");
+        // vTaskDelay(POPUP_WINDOW_HOLD_TIME);
+        xSemaphoreGive(displayMutex);
+        previousChargeStatus = chargeStatus;
+      }
+
+      ESP_LOGD(POWER_TAG, "Device is charging/completed. Sleep now zzz");
 
       sleepDueToCharging = true;
-      ESP_LOGD(POWER_TAG, "Device is charging/completed. Sleep now zzz");
-      esp_deep_sleep_start();
-    }
-    else {
-      vTaskResume(dropFactorSelectionTaskHandle);
+      esp_deep_sleep_start();  // comment to run debug
+    } else {
+      if (!dropFactorConfirmed) {
+        /*Create a task for drop factor selection*/
+        xTaskCreate(dropFactorSelectionTask, "Drop Factor Selection Task", 4096,
+                    NULL,
+                    configMAX_PRIORITIES - 3, // lower priority than powerOffTask, this needs to
+                                              // complete once before other tasks can run
+                    &dropFactorSelectionTaskHandle);
+      }
     }
 #endif
 

@@ -8,6 +8,8 @@
 #define STATUS_BAR_HEIGHT                   10
 #define BATTERY_SYMBOL_WIDTH                16
 #define DROP_FACTOR_SYMBOL_WIDTH            25
+#define BATTERY_LARGE_SYMBOL_WIDTH          51
+#define BATTERY_LARGE_SYMBOL_HEIGHT         30
 
 static const char* DISPLAY_TAG = "DISPLAY";
 
@@ -342,4 +344,33 @@ void dropFactorSelectionScreen(uint8_t activeDropFactor) {
     display.setCursor(dropFactor_x, dropFactor_y);
     display.print(activeDropFactor_buf);
   } while (display.nextPage());
+}
+
+void drawBatteryBitmapCharging(charge_status_t status) {
+  uint8_t *bitmap;
+
+  /*Select corresponding bitmap*/
+  if (status == charge_status_t::CHARGING) {
+    bitmap = (uint8_t*)batteryBitmap_charging_large_51x30;
+  }
+  else if (status == charge_status_t::CHARGE_COMPLETED) {
+    bitmap = (uint8_t*)batteryBitmap_charge_completed_large_51x30;
+  }
+  else {
+    // Unknown charge status, this will never happen
+    // Do nothing
+  }
+
+  /*Display the selected bitmap*/
+  uint8_t x = (display.width() - BATTERY_LARGE_SYMBOL_WIDTH) / 2;
+  uint8_t y = (display.height() - BATTERY_LARGE_SYMBOL_HEIGHT) / 2;
+  display.setFullWindow();
+
+  display.firstPage();
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.drawInvertedBitmap(x, y, bitmap, 51, 30, GxEPD_BLACK);
+  } while (display.nextPage());
+
+  ESP_LOGD(DISPLAY_TAG, "Battery charging symbol drawn");
 }

@@ -33,6 +33,8 @@ ezButton powerButton(LATCH_IO_PIN);
 ezButton userButton(USER_BUTTON_PIN);     // to select Drop Factor and enable other functions in the future
 button_state_t userButtonState = button_state_t::IDLE;
 unsigned long deviceLastActiveTime;       // used for auto-off function
+RTC_DATA_ATTR bool sleepDueToCharging = false;
+RTC_DATA_ATTR charge_status_t previousChargeStatus = charge_status_t::UNKNOWN;  // initial value to have smth to compare
 
 /*Variables related to I2C*/
 
@@ -40,6 +42,7 @@ unsigned long deviceLastActiveTime;       // used for auto-off function
 SemaphoreHandle_t  displayMutex;
 
 /*Task handles*/
+TaskHandle_t dropFactorSelectionTaskHandle;
 TaskHandle_t refreshDisplayTaskHandle;
 TaskHandle_t processI2CCommandsTaskHandle;
 TaskHandle_t dropDetectedLEDTaskHandle;
@@ -57,6 +60,31 @@ void IRAM_ATTR buttonsPressedISR();
 void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
 void dropFactorSelectionTask(void * arg);
+
+void testLED() {
+  for (int i=1; i<=3; i++) {
+    digitalWrite(DROP_SENSOR_LED_PIN, LOW);
+    delay(50);
+    digitalWrite(DROP_SENSOR_LED_PIN, HIGH);
+    delay(50);
+  }
+}
+
+void print_wakeup_reason(){
+  esp_sleep_wakeup_cause_t wakeup_reason;
+
+  wakeup_reason = esp_sleep_get_wakeup_cause();
+
+  switch(wakeup_reason)
+  {
+    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;
+    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
+    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
+    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -79,7 +107,11 @@ void setup() {
 
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
-  startScreen();
+
+  // When waking up from sleep due to charging, no need to show the start screen again
+  if (!sleepDueToCharging) {
+    startScreen();
+  }
 
   /*I2C initialization for sending out data, e.g. to AGIS*/
   I2CDevice.i2cInit();
@@ -116,14 +148,6 @@ void setup() {
               4096,
               NULL,
               configMAX_PRIORITIES-2,      // make sure this will run first to show the battery level
-              NULL);
-
-  /*Create a task for drop factor selection*/
-  xTaskCreate(dropFactorSelectionTask,
-              "Drop Factor Selection Task",
-              4096,
-              NULL,
-              configMAX_PRIORITIES-3,      // lower priority than powerOffTask, this needs to complete once before other tasks can run
               NULL);
 
   /*Create a task for processing I2C commands*/
@@ -164,6 +188,9 @@ void setup() {
 
   // Record this as device last active time
   deviceLastActiveTime = millis();
+
+  // Setup wakeup source for deep sleep
+  esp_sleep_enable_timer_wakeup(1000000);  // 1s
 }
 
 
@@ -402,8 +429,39 @@ void monitorBatteryTask(void * arg) {
 void monitorBatteryChargeStatusTask(void * arg) {
   for(;;) {
     /*Get battery charging status*/
-    static charge_status_t previousChargeStatus = charge_status_t::UNKNOWN;  // initial value to have smth to compare
     charge_status_t chargeStatus = getChargeStatus();
+
+#ifdef DEVICE_DISABLE_DURING_CHARGING
+    if (chargeStatus == charge_status_t::CHARGING ||
+        chargeStatus == charge_status_t::CHARGE_COMPLETED) {
+
+      // Cut-off power to sensor
+      digitalWrite(DROP_SENSOR_VCC_EN_PIN, LOW);
+
+      // Display charging information, then device goes to sleep to save power
+      // Only redraw if previously not
+      if (chargeStatus != previousChargeStatus) {
+        xSemaphoreTake(displayMutex, portMAX_DELAY);
+        drawBatteryBitmapCharging(chargeStatus);
+        xSemaphoreGive(displayMutex);
+        previousChargeStatus = chargeStatus;
+      }
+
+      ESP_LOGD(POWER_TAG, "Device is charging/completed. Sleep now zzz");
+
+      sleepDueToCharging = true;
+      esp_deep_sleep_start();  // comment to run debug
+    } else {
+      if (!dropFactorConfirmed) {
+        /*Create a task for drop factor selection*/
+        xTaskCreate(dropFactorSelectionTask, "Drop Factor Selection Task", 4096,
+                    NULL,
+                    configMAX_PRIORITIES - 3, // lower priority than powerOffTask, this needs to
+                                              // complete once before other tasks can run
+                    &dropFactorSelectionTaskHandle);
+      }
+    }
+#endif
 
     /*Refresh battery symbol based on battery voltage and charge status*/
     // Only redraw if charge status has changed

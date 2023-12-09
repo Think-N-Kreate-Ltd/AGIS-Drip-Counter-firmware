@@ -45,5 +45,6 @@ void drawBatteryBitmap(float voltage, charge_status_t status);
 void drawDropFactorBitmap(uint8_t dropFactor);
 void displayPopup(const char * message);
 void dropFactorSelectionScreen(uint8_t dropFactor);
+void drawBatteryBitmapCharging(charge_status_t status);
 
 #endif /* B6F3EDF6_26E6_475A_8BCD_2F6D61486F3D */

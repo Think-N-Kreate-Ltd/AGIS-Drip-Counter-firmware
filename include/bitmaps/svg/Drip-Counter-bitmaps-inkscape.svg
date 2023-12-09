@@ -25,9 +25,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      inkscape:export-bgcolor="#ffffffff"
-     inkscape:zoom="2.8284272"
-     inkscape:cx="149.02275"
-     inkscape:cy="110.13188"
+     inkscape:zoom="2.0000001"
+     inkscape:cx="98.749997"
+     inkscape:cy="205.74999"
      inkscape:window-width="1920"
      inkscape:window-height="1009"
      inkscape:window-x="-8"
@@ -534,6 +534,250 @@
          id="image1-5"
          x="4.2333331"
          y="0.26458332" />
+    </g>
+    <rect
+       style="display:inline;vector-effect:non-scaling-stroke;fill:none;stroke:#000000;stroke-width:0.267329;stroke-dasharray:none;stroke-opacity:1;-inkscape-stroke:hairline"
+       id="rect3-7"
+       width="21.166666"
+       height="33.866665"
+       x="0"
+       y="52.916668"
+       sodipodi:insensitive="true" />
+    <g
+       id="g3"
+       inkscape:export-filename="battery-charge-completed-large.svg"
+       inkscape:export-xdpi="105.5"
+       inkscape:export-ydpi="105.5">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.859165;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9-5-0-8-5-1"
+         width="11.047085"
+         height="7.0783353"
+         x="32.179585"
+         y="66.576843"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-charging.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4"
+         width="1.3527528"
+         height="4.5277534"
+         x="33.454876"
+         y="67.8507"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6"
+         width="1.3527528"
+         height="4.5277534"
+         x="35.836124"
+         y="67.850708"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-1"
+         width="1.3527528"
+         height="4.5277534"
+         x="38.217373"
+         y="67.850708"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9"
+         width="1.3527528"
+         height="4.5277534"
+         x="40.598625"
+         y="67.850708"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.161743;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2"
+         width="0.63200712"
+         height="4.6007576"
+         x="44.530872"
+         y="67.814209"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0687666;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-5"
+         width="0.72498345"
+         height="0.72498339"
+         x="-68.492699"
+         y="43.690636"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0687666;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-5-0"
+         width="0.72498345"
+         height="0.72498339"
+         x="-72.461449"
+         y="43.690632"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+    </g>
+    <g
+       id="g3-90"
+       transform="translate(-27.309913,-0.42926231)">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.859165;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9-5-0-8-5-1-4"
+         width="11.047085"
+         height="7.0783353"
+         x="32.179585"
+         y="66.576843"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-charging.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-66"
+         width="1.3527528"
+         height="4.5277534"
+         x="33.454876"
+         y="67.8507"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-2"
+         width="1.3527528"
+         height="4.5277534"
+         x="35.836124"
+         y="67.850708"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-1-4"
+         width="1.3527528"
+         height="4.5277534"
+         x="38.217373"
+         y="67.850708"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.234747;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-7"
+         width="1.3527528"
+         height="4.5277534"
+         x="40.598625"
+         y="67.850708"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.161743;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-9"
+         width="0.63200712"
+         height="4.6007576"
+         x="44.530872"
+         y="67.814209"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0687666;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-5-4"
+         width="0.72498345"
+         height="0.72498339"
+         x="-68.492699"
+         y="43.690636"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0687666;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-5-0-7"
+         width="0.72498345"
+         height="0.72498339"
+         x="-72.461449"
+         y="43.690632"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+    </g>
+    <g
+       id="g9"
+       transform="translate(0,-26.458332)"
+       inkscape:export-filename="battery-charging-large.svg"
+       inkscape:export-xdpi="105.5"
+       inkscape:export-ydpi="105.5">
+      <rect
+         style="fill:#ffffff;stroke:#000000;stroke-width:0.859165;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-1-54-9-5-0-8-5-1-2"
+         width="11.047085"
+         height="7.0783353"
+         x="32.179581"
+         y="79.804581"
+         ry="0"
+         rx="0"
+         inkscape:export-filename="battery-charging.svg"
+         inkscape:export-xdpi="105.5"
+         inkscape:export-ydpi="105.5" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.161743;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-3"
+         width="0.63200712"
+         height="4.6007576"
+         x="44.530869"
+         y="81.041946"
+         ry="0"
+         rx="0" />
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.150579;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-3-5"
+         width="0.79374999"
+         height="3.175"
+         x="-80.20182"
+         y="37.483795"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+      <rect
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.150579;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-3-5-5"
+         width="0.79374999"
+         height="3.175"
+         x="-87.278122"
+         y="34.891132"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0687666;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-5-3"
+         width="0.72498345"
+         height="0.72498339"
+         x="-81.720436"
+         y="43.690632"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+      <rect
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.0687666;stroke-dasharray:none;stroke-opacity:1"
+         id="rect1-7-9-5-5-4-6-9-2-5-0-8"
+         width="0.72498345"
+         height="0.72498339"
+         x="-85.689186"
+         y="43.690628"
+         ry="0"
+         rx="0"
+         transform="rotate(-90)" />
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.359857;stroke-dasharray:none;stroke-opacity:1"
+         d="m 36.221145,83.529848 3.079475,-3.855469 -1.180607,3.18489 h 1.561693 l -3.315772,4.151299 1.272602,-3.433023 z"
+         id="path6-9-2-5-5-8" />
     </g>
   </g>
 </svg>

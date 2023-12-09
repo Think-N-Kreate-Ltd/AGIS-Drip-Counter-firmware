@@ -434,14 +434,15 @@ void monitorBatteryChargeStatusTask(void * arg) {
 #ifdef DEVICE_DISABLE_DURING_CHARGING
     if (chargeStatus == charge_status_t::CHARGING ||
         chargeStatus == charge_status_t::CHARGE_COMPLETED) {
-      // Display charging information, then device goes to sleep to save power
 
+      // Cut-off power to sensor
+      digitalWrite(DROP_SENSOR_VCC_EN_PIN, LOW);
+
+      // Display charging information, then device goes to sleep to save power
       // Only redraw if previously not
       if (chargeStatus != previousChargeStatus) {
         xSemaphoreTake(displayMutex, portMAX_DELAY);
-        // TODO: display large symbol here
-        displayPopup("CHARGING");
-        // vTaskDelay(POPUP_WINDOW_HOLD_TIME);
+        drawBatteryBitmapCharging(chargeStatus);
         xSemaphoreGive(displayMutex);
         previousChargeStatus = chargeStatus;
       }

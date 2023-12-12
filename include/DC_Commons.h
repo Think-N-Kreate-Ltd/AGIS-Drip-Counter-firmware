@@ -42,7 +42,7 @@
 #define USER_BUTTON_PIN        7
 
 // Buzzer
-#define BUZZER_PIN             10
+#define BUZZER_PIN             35
 #define BUZZER_FREQ            2000
 #define BUZZER_TIME_ON         20        // in ms
 #define BUZZER_TIME_OFF        150       // in ms

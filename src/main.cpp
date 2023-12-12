@@ -105,9 +105,6 @@ void setup() {
   pinMode(BATT_CHGb_PIN, INPUT);
   pinMode(BATT_STDBYb_PIN, INPUT);
 
-  // for buzzer
-  pinMode(BUZZER_PIN, OUTPUT);
-
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
 

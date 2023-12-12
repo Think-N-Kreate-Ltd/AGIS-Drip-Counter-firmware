@@ -94,9 +94,6 @@ void setup() {
 
   /*GPIO setup*/
   // for drop sensor
-  pinMode(DROP_SENSOR_PIN, INPUT);
-  pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
-  digitalWrite(DROP_SENSOR_LED_PIN, HIGH);    // initially OFF
   pinMode(DROP_SENSOR_VCC_EN_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_VCC_EN_PIN, LOW);  // initially OFF
 
@@ -620,7 +617,10 @@ void dropFactorSelectionTask(void * arg) {
       drawDropFactorBitmap(dropFactor);
 
       /*Now we can enable some peripherals and initialization*/
-      // Enable power for sensor
+      // Initialize pins and enable power for sensor
+      pinMode(DROP_SENSOR_PIN, INPUT);
+      pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
+      digitalWrite(DROP_SENSOR_LED_PIN, HIGH);    // initially OFF
       digitalWrite(DROP_SENSOR_VCC_EN_PIN, HIGH);
       // Setup for sensor interrupt
       attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change

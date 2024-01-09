@@ -60,6 +60,9 @@ void IRAM_ATTR buttonsPressedISR();
 void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
 void dropFactorSelectionTask(void * arg);
+void deviceOnOffSound();
+void buttonSinglePressedSound();
+void buttonDoublePressedSound();
 
 void testLED() {
   for (int i=1; i<=3; i++) {
@@ -91,9 +94,6 @@ void setup() {
 
   /*GPIO setup*/
   // for drop sensor
-  pinMode(DROP_SENSOR_PIN, INPUT);
-  pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
-  digitalWrite(DROP_SENSOR_LED_PIN, HIGH);    // initially OFF
   pinMode(DROP_SENSOR_VCC_EN_PIN, OUTPUT);
   digitalWrite(DROP_SENSOR_VCC_EN_PIN, LOW);  // initially OFF
 
@@ -110,6 +110,7 @@ void setup() {
 
   // When waking up from sleep due to charging, no need to show the start screen again
   if (!sleepDueToCharging) {
+    deviceOnOffSound();
     startScreen();
   }
 
@@ -369,6 +370,7 @@ void powerOffTask(void * arg) {
       // etc...
 
       /*Notify that device is about to be powered off*/
+      deviceOnOffSound();
       xSemaphoreTake(displayMutex, portMAX_DELAY);
       ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
@@ -587,6 +589,9 @@ void dropFactorSelectionTask(void * arg) {
     if (userButtonState == button_state_t::SINGLE_PRESS) {
       userButtonState = button_state_t::IDLE;  // do this immediately after enter block, otherwise there could be missed button press
 
+      // buzzer sound feedback
+      buttonSinglePressedSound();
+
       // change to the next drop factor
       index++;
       if (index == sizeof(dropFactorArray) / sizeof(dropFactorArray[0])) {
@@ -599,6 +604,9 @@ void dropFactorSelectionTask(void * arg) {
     else if (userButtonState == button_state_t::DOUBLE_PRESS) {
       userButtonState = button_state_t::IDLE;
 
+      // buzzer sound feedback
+      buttonDoublePressedSound();
+
       // drop factor is confirmed
       dropFactor = activeDropFactor;
 
@@ -606,7 +614,10 @@ void dropFactorSelectionTask(void * arg) {
       drawDropFactorBitmap(dropFactor);
 
       /*Now we can enable some peripherals and initialization*/
-      // Enable power for sensor
+      // Initialize pins and enable power for sensor
+      pinMode(DROP_SENSOR_PIN, INPUT);
+      pinMode(DROP_SENSOR_LED_PIN, OUTPUT);
+      digitalWrite(DROP_SENSOR_LED_PIN, HIGH);    // initially OFF
       digitalWrite(DROP_SENSOR_VCC_EN_PIN, HIGH);
       // Setup for sensor interrupt
       attachInterrupt(DROP_SENSOR_PIN, &dropSensorISR, CHANGE);  // call interrupt when state change
@@ -636,5 +647,26 @@ void dropFactorSelectionTask(void * arg) {
 
     // free the CPU
     vTaskDelay(10);
+  }
+}
+
+// 3 chirps
+void deviceOnOffSound() {
+  for (uint8_t i = 0; i < 3; i++) {
+    tone(BUZZER_PIN, BUZZER_FREQ, BUZZER_TIME_ON);
+    delay(BUZZER_TIME_OFF);
+  }
+}
+
+// 1 chirp
+void buttonSinglePressedSound() {
+  tone(BUZZER_PIN, BUZZER_FREQ, BUZZER_TIME_ON);
+}
+
+// 2 chirps
+void buttonDoublePressedSound() {
+  for (uint8_t i = 0; i < 2; i++) {
+    tone(BUZZER_PIN, BUZZER_FREQ, BUZZER_TIME_ON);
+    delay(BUZZER_TIME_OFF);
   }
 }

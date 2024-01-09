@@ -41,6 +41,12 @@
 // User button pin
 #define USER_BUTTON_PIN        7
 
+// Buzzer
+#define BUZZER_PIN             35
+#define BUZZER_FREQ            2000
+#define BUZZER_TIME_ON         20        // in ms
+#define BUZZER_TIME_OFF        150       // in ms
+
 /*Constant definitions*/
 #define DROP_DEBOUNCE_TIME         10     // if two pulses are generated within debounce time, it must be detected as 1 drop
 #define DISPLAY_REFRESH_TIME       100    // time between display refresh (Spec: 0.3s partial refresh)

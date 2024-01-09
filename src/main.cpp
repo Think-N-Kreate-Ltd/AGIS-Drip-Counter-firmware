@@ -35,6 +35,7 @@ button_state_t userButtonState = button_state_t::IDLE;
 unsigned long deviceLastActiveTime;       // used for auto-off function
 RTC_DATA_ATTR bool sleepDueToCharging = false;
 RTC_DATA_ATTR charge_status_t previousChargeStatus = charge_status_t::UNKNOWN;  // initial value to have smth to compare
+unsigned long lastFrontLightOn;           // used to measure front light on time
 
 /*Variables related to I2C*/
 
@@ -60,15 +61,18 @@ void IRAM_ATTR buttonsPressedISR();
 void powerOffTask(void *);
 void processI2CCommandsTask(void * arg);
 void dropFactorSelectionTask(void * arg);
+void frontLightControlTask(void * arg);
 void deviceOnOffSound();
 void buttonSinglePressedSound();
 void buttonDoublePressedSound();
+void frontLightOn();
+void frontLightOff();
 
 void testLED() {
   for (int i=1; i<=3; i++) {
-    digitalWrite(DROP_SENSOR_LED_PIN, LOW);
+    digitalWrite(FRONT_LIGHT_PIN, HIGH);
     delay(50);
-    digitalWrite(DROP_SENSOR_LED_PIN, HIGH);
+    digitalWrite(FRONT_LIGHT_PIN, LOW);
     delay(50);
   }
 }
@@ -105,12 +109,17 @@ void setup() {
   pinMode(BATT_CHGb_PIN, INPUT);
   pinMode(BATT_STDBYb_PIN, INPUT);
 
+  // for front light
+  pinMode(FRONT_LIGHT_PIN, OUTPUT);
+  digitalWrite(FRONT_LIGHT_PIN, LOW);
+
   /*Initialize Epaper display and show welcome screen*/
   displayInit();
 
   // When waking up from sleep due to charging, no need to show the start screen again
   if (!sleepDueToCharging) {
     deviceOnOffSound();
+    frontLightOn();
     startScreen();
   }
 
@@ -186,6 +195,14 @@ void setup() {
               0,
               &monitorBatteryTaskHandle);
   vTaskSuspend(monitorBatteryTaskHandle);
+
+  /*Create a task for controlling front light to save power*/
+  xTaskCreate(frontLightControlTask,
+              "Front Light Control Task",
+              4096,
+              NULL,
+              0,
+              NULL);
 
   // Record this as device last active time
   deviceLastActiveTime = millis();
@@ -371,6 +388,7 @@ void powerOffTask(void * arg) {
 
       /*Notify that device is about to be powered off*/
       deviceOnOffSound();
+      frontLightOn();
       xSemaphoreTake(displayMutex, portMAX_DELAY);
       ESP_LOGD(POWER_TAG, "Power off signal received. Cleaning up...");
       powerOffScreen();
@@ -532,6 +550,9 @@ void IRAM_ATTR buttonsPressedISR() {
       userButtonState = button_state_t::SINGLE_PRESS;
       buttonState = 0;
       lastPressedTime = millis();
+
+      // turn on the front light
+      frontLightOn();
     }
     else if (userButton.isPressed()) {
       // double press
@@ -650,6 +671,18 @@ void dropFactorSelectionTask(void * arg) {
   }
 }
 
+void frontLightControlTask(void * arg) {
+  for(;;) {
+
+    if (millis() - lastFrontLightOn > FRONT_LIGHT_HOLD_TIME) {
+      frontLightOff();
+    }
+
+    // free the CPU
+    vTaskDelay(FRONT_LIGHT_TASK_DELAY);
+  }
+}
+
 // 3 chirps
 void deviceOnOffSound() {
   for (uint8_t i = 0; i < 3; i++) {
@@ -669,4 +702,13 @@ void buttonDoublePressedSound() {
     tone(BUZZER_PIN, BUZZER_FREQ, BUZZER_TIME_ON);
     delay(BUZZER_TIME_OFF);
   }
+}
+
+void frontLightOn() {
+  digitalWrite(FRONT_LIGHT_PIN, HIGH);
+  lastFrontLightOn = millis();
+}
+
+void frontLightOff() {
+  digitalWrite(FRONT_LIGHT_PIN, LOW);
 }

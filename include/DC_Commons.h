@@ -47,6 +47,9 @@
 #define BUZZER_TIME_ON         20        // in ms
 #define BUZZER_TIME_OFF        150       // in ms
 
+// Front light pin
+#define FRONT_LIGHT_PIN        4
+
 /*Constant definitions*/
 #define DROP_DEBOUNCE_TIME         10     // if two pulses are generated within debounce time, it must be detected as 1 drop
 #define DISPLAY_REFRESH_TIME       100    // time between display refresh (Spec: 0.3s partial refresh)
@@ -56,6 +59,8 @@
 #define NO_DROP_ALARM_TIME         20000  // alarm will be triggered if excedeeding this time
 #define AUTO_OFF_TIME              60000  // device will auto-off if exceeding this time
 #define DOUBLE_PRESS_TIMEOUT       300    // 2 consecutive button press within this time is considered a double press
+#define FRONT_LIGHT_HOLD_TIME      5000   // time duration for the front light to stay on
+#define FRONT_LIGHT_TASK_DELAY     1000   // vtaskdelay for front light control task
 
 const char GTT_STRING[] = "gtt/m";
 const char MLH_STRING[] = "mL/h";
